@@ -1,0 +1,1192 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="EZPack AI: asistente ligero de voz y texto que corre 100% en tu navegador, sin servidores.">
+    <meta name="theme-color" content="#0b0f19">
+    <title>EZPack AI</title>
+    <style>
+        :root {
+            --bg-color: #0b0f19;
+            --panel-bg: #111827;
+            --text-color: #f3f4f6;
+            --accent-color: #3b82f6;
+            --border-color: #1f2937;
+            --bubble-user: #1d4ed8;
+            --bubble-ai: #1f2937;
+            --danger-color: #dc2626;
+            --muted-color: #9ca3af;
+        }
+
+        html[data-theme="light"] {
+            --bg-color: #f3f4f6;
+            --panel-bg: #ffffff;
+            --text-color: #111827;
+            --accent-color: #2563eb;
+            --border-color: #e5e7eb;
+            --bubble-user: #2563eb;
+            --bubble-ai: #e5e7eb;
+            --danger-color: #dc2626;
+            --muted-color: #6b7280;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: system-ui, -apple-system, sans-serif; }
+        body { background-color: var(--bg-color); color: var(--text-color); display: flex; flex-direction: column; height: 100vh; overflow: hidden; transition: background-color 0.2s, color 0.2s; }
+
+        /* Header */
+        header { background-color: var(--panel-bg); border-bottom: 1px solid var(--border-color); padding: 12px 20px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px; position: relative; }
+        .logo-area { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+        .logo-box { font-size: 1.5rem; }
+        .title { font-weight: bold; font-size: 1.1rem; letter-spacing: 0.5px; }
+        .status-badge { background-color: #7f1d1d; color: #fca5a5; font-size: 0.75rem; padding: 3px 8px; border-radius: 12px; display: flex; align-items: center; gap: 5px; font-weight: 500; }
+        .status-badge.active { background-color: #065f46; color: #6ee7b7; }
+        .status-dot { width: 6px; height: 6px; background-color: currentColor; border-radius: 50%; }
+
+        .header-right { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+        .modes { display: flex; gap: 6px; flex-wrap: wrap; }
+        .mode-btn { background: var(--border-color); color: var(--text-color); border: none; padding: 6px 12px; border-radius: 6px; font-size: 0.85rem; cursor: pointer; transition: background 0.2s; }
+        .mode-btn.active, .mode-btn:hover { background-color: var(--accent-color); color: #fff; }
+        .mode-btn:focus-visible, .icon-btn:focus-visible, .chip:focus-visible, .send-btn:focus-visible, .util-btn:focus-visible {
+            outline: 2px solid #93c5fd; outline-offset: 2px;
+        }
+
+        .util-btn { background: none; border: 1px solid var(--border-color); color: var(--muted-color); padding: 6px 10px; border-radius: 6px; font-size: 0.8rem; cursor: pointer; transition: color 0.2s, border-color 0.2s, background 0.2s; }
+        .util-btn:hover { color: var(--text-color); border-color: var(--accent-color); }
+        .util-btn.danger:hover { color: var(--danger-color); border-color: var(--danger-color); }
+
+        /* Chat Container */
+        .chat-container { flex: 1; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; gap: 12px; }
+        .message-wrapper { display: flex; flex-direction: column; max-width: 80%; }
+        .message-wrapper.ai { align-self: flex-start; }
+        .message-wrapper.user { align-self: flex-end; }
+
+        .message-meta { display: flex; align-items: center; gap: 6px; font-size: 0.7rem; color: var(--muted-color); margin-bottom: 3px; padding: 0 4px; }
+        .message-wrapper.user .message-meta { align-self: flex-end; flex-direction: row-reverse; }
+
+        .message { padding: 12px 16px; border-radius: 12px; line-height: 1.5; font-size: 0.95rem; word-break: break-word; }
+        .message.ai { background-color: var(--bubble-ai); border-bottom-left-radius: 4px; }
+        .message.user { background-color: var(--bubble-user); color: #fff; border-bottom-right-radius: 4px; }
+
+        .date-separator { align-self: center; font-size: 0.72rem; color: var(--muted-color); background: rgba(128,128,128,0.12); padding: 3px 12px; border-radius: 12px; margin: 6px 0; }
+
+        /* Indicador de "escribiendo" */
+        .typing-dots { display: flex; gap: 4px; padding: 4px 2px; }
+        .typing-dots span { width: 6px; height: 6px; background: var(--muted-color); border-radius: 50%; animation: bounce 1.2s infinite; }
+        .typing-dots span:nth-child(2) { animation-delay: 0.15s; }
+        .typing-dots span:nth-child(3) { animation-delay: 0.3s; }
+        @keyframes bounce { 0%, 60%, 100% { transform: translateY(0); opacity: 0.5; } 30% { transform: translateY(-4px); opacity: 1; } }
+
+        /* Botones de acción de mensaje */
+        .msg-actions { display: flex; gap: 10px; margin-top: 4px; padding: 0 4px; }
+        .speak-msg-btn, .stop-msg-btn, .copy-msg-btn { background: none; border: none; color: var(--muted-color); font-size: 0.75rem; cursor: pointer; align-self: flex-start; display: flex; align-items: center; gap: 4px; padding: 2px 4px; border-radius: 4px; transition: color 0.2s, background 0.2s; }
+        .speak-msg-btn:hover, .stop-msg-btn:hover, .copy-msg-btn:hover { color: var(--text-color); background: rgba(128,128,128,0.12); }
+
+        /* Quick Chips */
+        .chips-container { padding: 10px 20px; display: flex; gap: 8px; overflow-x: auto; background-color: rgba(128,128,128,0.06); }
+        .chip { background: var(--border-color); border: none; color: var(--text-color); padding: 6px 12px; border-radius: 16px; font-size: 0.8rem; cursor: pointer; white-space: nowrap; transition: background 0.2s; }
+        .chip:hover { background: var(--accent-color); color: #fff; }
+
+        /* Input Area */
+        .input-area { background-color: var(--panel-bg); border-top: 1px solid var(--border-color); padding: 12px 20px 4px; display: flex; align-items: center; gap: 10px; }
+        .icon-btn { background: var(--border-color); border: none; color: var(--text-color); width: 40px; height: 40px; border-radius: 8px; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 1.1rem; transition: background 0.2s; flex-shrink: 0; }
+        .icon-btn:hover { background: #374151; }
+        .icon-btn.listening { background-color: #dc2626; color: white; animation: pulse 1.5s infinite; }
+
+        input[type="text"] { flex: 1; min-width: 0; background: var(--bg-color); border: 1px solid var(--border-color); border-radius: 8px; padding: 12px 15px; color: var(--text-color); font-size: 0.95rem; outline: none; }
+        input[type="text"]:focus { border-color: var(--accent-color); }
+
+        .send-btn { background-color: var(--accent-color); color: white; border: none; padding: 0 20px; height: 40px; border-radius: 8px; font-weight: bold; cursor: pointer; transition: background 0.2s; flex-shrink: 0; }
+        .send-btn:hover { background-color: #2563eb; }
+        .send-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+        .char-counter { font-size: 0.7rem; color: var(--muted-color); text-align: right; padding: 2px 20px 8px; background-color: var(--panel-bg); }
+        .char-counter.warning { color: #f59e0b; }
+        .char-counter.limit { color: var(--danger-color); }
+
+        /* Botón flotante ir al final */
+        .scroll-bottom-btn { position: fixed; bottom: 175px; right: 24px; background: var(--accent-color); color: #fff; border: none; width: 42px; height: 42px; border-radius: 50%; cursor: pointer; display: none; align-items: center; justify-content: center; font-size: 1rem; box-shadow: 0 4px 12px rgba(0,0,0,0.35); z-index: 800; }
+        .scroll-bottom-btn.show { display: flex; }
+        .scroll-bottom-btn .badge { position: absolute; top: -6px; right: -6px; background: var(--danger-color); color: #fff; font-size: 0.65rem; border-radius: 10px; padding: 1px 5px; display: none; min-width: 16px; }
+        .scroll-bottom-btn .badge.show { display: block; }
+
+        /* Panel de ajustes */
+        .settings-panel { position: absolute; top: 62px; right: 20px; background: var(--panel-bg); border: 1px solid var(--border-color); border-radius: 10px; padding: 16px; width: 280px; display: none; flex-direction: column; gap: 10px; z-index: 900; box-shadow: 0 8px 24px rgba(0,0,0,0.35); max-height: 72vh; overflow-y: auto; }
+        .settings-panel.open { display: flex; }
+        .settings-title { font-weight: bold; font-size: 0.85rem; opacity: 0.85; }
+        .settings-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; font-size: 0.82rem; }
+        .settings-row label { flex: 1; }
+        .settings-divider { border-top: 1px solid var(--border-color); margin: 2px 0; }
+        select, input[type="range"] { background: var(--bg-color); color: var(--text-color); border: 1px solid var(--border-color); border-radius: 6px; padding: 4px; max-width: 130px; }
+        #statsRow { font-size: 0.8rem; color: var(--muted-color); line-height: 1.5; }
+
+        /* Toasts */
+        .toast-container { position: fixed; bottom: 90px; left: 50%; transform: translateX(-50%); display: flex; flex-direction: column; gap: 8px; z-index: 1000; pointer-events: none; align-items: center; }
+        .toast { background: var(--panel-bg); border: 1px solid var(--border-color); color: var(--text-color); padding: 8px 14px; border-radius: 8px; font-size: 0.82rem; box-shadow: 0 4px 12px rgba(0,0,0,0.3); animation: toastIn 0.25s ease, toastOut 0.25s ease 1.85s forwards; }
+        @keyframes toastIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes toastOut { from { opacity: 1; } to { opacity: 0; } }
+
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.6; }
+            100% { opacity: 1; }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            .icon-btn.listening, .typing-dots span, .toast { animation: none; }
+        }
+
+        @media (max-width: 480px) {
+            .message-wrapper { max-width: 92%; }
+            .modes { gap: 4px; }
+            .mode-btn { padding: 5px 8px; font-size: 0.78rem; }
+            .settings-panel { width: calc(100vw - 32px); right: 16px; }
+            .header-right { gap: 6px; }
+            .scroll-bottom-btn { right: 16px; bottom: 165px; }
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <div class="logo-area">
+            <span class="logo-box">📦</span>
+            <span class="title">EZPack AI</span>
+            <div id="statusBadge" class="status-badge">
+                <div class="status-dot"></div>
+                <span id="statusText">Voz Inactiva</span>
+            </div>
+        </div>
+        <div class="header-right">
+            <div class="modes">
+                <button class="mode-btn active" onclick="setMode('Amigable')">Amigable</button>
+                <button class="mode-btn" onclick="setMode('Mate')">Mate</button>
+                <button class="mode-btn" onclick="setMode('Experta')">Experta</button>
+                <button class="mode-btn" onclick="setMode('Omni')">Omni</button>
+                <button class="mode-btn" onclick="setMode('Meme')">Meme</button>
+            </div>
+            <button class="util-btn danger" onclick="confirmarLimpiarChat()" title="Borrar conversación">🗑️ Limpiar</button>
+            <button class="util-btn" onclick="exportarChat()" title="Exportar conversación">⬇️ Exportar</button>
+            <button class="util-btn" id="themeBtn" onclick="alternarTema()" title="Cambiar tema" aria-label="Cambiar entre tema claro y oscuro">🌙</button>
+            <button class="util-btn" id="settingsBtn" onclick="alternarPanelAjustes()" title="Ajustes" aria-label="Abrir panel de ajustes">⚙️</button>
+        </div>
+
+        <div class="settings-panel" id="settingsPanel">
+            <div class="settings-title">🔊 Voz y sonido</div>
+            <div class="settings-row">
+                <label for="autospeakToggle">Leer respuestas automáticamente</label>
+                <input type="checkbox" id="autospeakToggle" onchange="guardarAjustesVoz()">
+            </div>
+            <div class="settings-row">
+                <label for="voiceSelect">Voz</label>
+                <select id="voiceSelect" onchange="guardarAjustesVoz()"></select>
+            </div>
+            <div class="settings-row">
+                <label for="rateRange">Velocidad</label>
+                <input type="range" id="rateRange" min="0.6" max="1.4" step="0.05" onchange="guardarAjustesVoz()">
+            </div>
+            <div class="settings-row">
+                <label for="pitchRange">Tono</label>
+                <input type="range" id="pitchRange" min="0.6" max="1.4" step="0.05" onchange="guardarAjustesVoz()">
+            </div>
+            <div class="settings-row">
+                <label for="soundToggle">Sonido al recibir mensaje</label>
+                <input type="checkbox" id="soundToggle" onchange="guardarAjustesVoz()">
+            </div>
+            <div class="settings-divider"></div>
+            <div class="settings-title">📊 Estadísticas</div>
+            <div id="statsRow">—</div>
+            <div class="settings-divider"></div>
+            <button class="util-btn danger" onclick="restablecerAjustes()">Restablecer todo</button>
+        </div>
+    </header>
+
+    <div class="chat-container" id="chatContainer" role="log" aria-live="polite" aria-label="Conversación con EZPack AI"></div>
+
+    <button class="scroll-bottom-btn" id="scrollBottomBtn" onclick="irAlFinal()" aria-label="Ir al último mensaje">
+        ⬇️<span class="badge" id="scrollBadge"></span>
+    </button>
+
+    <div class="toast-container" id="toastContainer"></div>
+
+    <div class="chips-container">
+        <button class="chip" onclick="ejecutarAccion('¿Qué hora es?')">⏰ ¿Qué hora es?</button>
+        <button class="chip" onclick="ejecutarAccion('¿Qué fecha es?')">📅 ¿Qué fecha es?</button>
+        <button class="chip" onclick="ejecutarAccion('abrir youtube')">📺 Abrir YouTube</button>
+        <button class="chip" onclick="ejecutarAccion('abrir spotify')">🎧 Abrir Spotify</button>
+        <button class="chip" onclick="ejecutarAccion('mate: 45*12+8')">🧮 Mate: 45*12+8</button>
+        <button class="chip" onclick="ejecutarAccion('dado')">🎲 Tira un dado</button>
+        <button class="chip" onclick="ejecutarAccion('contraseña')">🔑 Contraseña</button>
+        <button class="chip" onclick="ejecutarAccion('cuéntame un chiste')">😂 Chiste</button>
+        <button class="chip" onclick="ejecutarAccion('ayuda')">❓ Ayuda</button>
+    </div>
+
+    <div class="input-area">
+        <button class="icon-btn" onclick="toggleVoz()" id="micBtn" title="Activar/Desactivar Micrófono" aria-label="Activar o desactivar el micrófono">🎙️</button>
+        <input type="text" id="userInput" list="comandosList" maxlength="500" placeholder="Di 'Hey Pack' o escribe aquí... (Ctrl+K)" onkeypress="handleKeyPress(event)" oninput="actualizarContador()">
+        <button class="send-btn" onclick="procesarMensaje()" id="sendBtn">Enviar</button>
+    </div>
+    <div class="char-counter" id="charCounter">0/500</div>
+
+    <datalist id="comandosList">
+        <option value="ayuda">
+        <option value="¿Qué hora es?">
+        <option value="¿Qué fecha es?">
+        <option value="hora en tokio">
+        <option value="hora en londres">
+        <option value="hora en nueva york">
+        <option value="abrir youtube">
+        <option value="abrir spotify">
+        <option value="mate: ">
+        <option value="convierte 100 celsius a fahrenheit">
+        <option value="convierte 10 km a millas">
+        <option value="dado">
+        <option value="moneda">
+        <option value="número aleatorio entre 1 y 100">
+        <option value="contraseña">
+        <option value="mayúsculas: ">
+        <option value="minúsculas: ">
+        <option value="contar palabras: ">
+        <option value="nota: ">
+        <option value="ver notas">
+        <option value="borrar notas">
+        <option value="temporizador 5 minutos">
+        <option value="buscar en internet ">
+        <option value="buscar en wikipedia ">
+        <option value="estadísticas">
+        <option value="cuéntame un chiste">
+    </datalist>
+
+    <script>
+        /* =========================================================
+           ESTADO GLOBAL Y CLAVES DE ALMACENAMIENTO
+        ========================================================= */
+        let modoActual = 'Amigable';
+        let vozActiva = false;
+        let synth = window.speechSynthesis;
+        let recognition = null;
+        let escuchandoVoz = false;
+        let listaVoces = [];
+        let procesando = false;
+        let historial = [];
+        let notas = [];
+        let ultimaFechaSeparador = '';
+        const sessionStart = Date.now();
+        const LS = {
+            historial: 'ezpack_historial',
+            modo: 'ezpack_modo',
+            tema: 'ezpack_tema',
+            notas: 'ezpack_notas',
+            autospeak: 'ezpack_autospeak',
+            sonido: 'ezpack_sonido',
+            voz: 'ezpack_voz_uri',
+            rate: 'ezpack_rate',
+            pitch: 'ezpack_pitch'
+        };
+
+        const AVATARES = { Amigable: '😊', Mate: '🧮', Experta: '🧠', Omni: '🌐', Meme: '😎' };
+
+        const CHISTES = [
+            "¿Por qué los pájaros no usan Facebook? Porque ya tienen Twitter. 🐦",
+            "¿Qué le dijo un semáforo a otro? No me mires que me estoy cambiando. 🚦",
+            "¿Cómo se llama el campeón de buceo japonés? Tokofondo. 🤿",
+            "¿Qué hace una abeja en el gimnasio? Zum-ba. 🐝"
+        ];
+
+        const CIUDADES_TZ = {
+            'tokio': 'Asia/Tokyo',
+            'londres': 'Europe/London',
+            'madrid': 'Europe/Madrid',
+            'nueva york': 'America/New_York',
+            'los angeles': 'America/Los_Angeles',
+            'ciudad de mexico': 'America/Mexico_City',
+            'cdmx': 'America/Mexico_City',
+            'buenos aires': 'America/Argentina/Buenos_Aires',
+            'paris': 'Europe/Paris'
+        };
+
+        /* =========================================================
+           UTILIDADES
+        ========================================================= */
+        function normalizar(t) {
+            return t.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+        }
+
+        function escaparHTML(texto) {
+            const div = document.createElement('div');
+            div.textContent = texto;
+            return div.innerHTML;
+        }
+
+        function horaCorta(fecha) {
+            return fecha.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' });
+        }
+
+        function fechaCorta(fecha) {
+            return fecha.toLocaleDateString('es-ES', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+        }
+
+        function mostrarToast(texto) {
+            const cont = document.getElementById('toastContainer');
+            const toast = document.createElement('div');
+            toast.className = 'toast';
+            toast.textContent = texto;
+            cont.appendChild(toast);
+            setTimeout(() => toast.remove(), 2100);
+        }
+
+        function reproducirBeep() {
+            if (!(localStorage.getItem(LS.sonido) === 'true')) return;
+            try {
+                const ctx = new (window.AudioContext || window.webkitAudioContext)();
+                const osc = ctx.createOscillator();
+                const gain = ctx.createGain();
+                osc.type = 'sine';
+                osc.frequency.value = 660;
+                gain.gain.setValueAtTime(0.08, ctx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.35);
+                osc.connect(gain).connect(ctx.destination);
+                osc.start();
+                osc.stop(ctx.currentTime + 0.35);
+            } catch (e) {}
+        }
+
+        /* =========================================================
+           TEMA CLARO / OSCURO
+        ========================================================= */
+        function aplicarTema(tema) {
+            document.documentElement.setAttribute('data-theme', tema);
+            document.getElementById('themeBtn').textContent = tema === 'light' ? '☀️' : '🌙';
+            const metaTheme = document.querySelector('meta[name="theme-color"]');
+            if (metaTheme) metaTheme.setAttribute('content', tema === 'light' ? '#f3f4f6' : '#0b0f19');
+        }
+
+        function alternarTema() {
+            const actual = document.documentElement.getAttribute('data-theme') || 'dark';
+            const nuevo = actual === 'light' ? 'dark' : 'light';
+            aplicarTema(nuevo);
+            localStorage.setItem(LS.tema, nuevo);
+        }
+
+        /* =========================================================
+           VOZ: SÍNTESIS Y RECONOCIMIENTO
+        ========================================================= */
+        function cargarVoces() {
+            if (!synth) return;
+            listaVoces = synth.getVoices();
+            const select = document.getElementById('voiceSelect');
+            if (!select) return;
+            const vozGuardada = localStorage.getItem(LS.voz);
+            select.innerHTML = '';
+            const optAuto = document.createElement('option');
+            optAuto.value = '';
+            optAuto.textContent = 'Automática (recomendada)';
+            select.appendChild(optAuto);
+            listaVoces.filter(v => v.lang.startsWith('es')).forEach(v => {
+                const opt = document.createElement('option');
+                opt.value = v.voiceURI;
+                opt.textContent = v.name;
+                if (v.voiceURI === vozGuardada) opt.selected = true;
+                select.appendChild(opt);
+            });
+        }
+
+        if (synth) {
+            cargarVoces();
+            if (synth.onvoiceschanged !== undefined) {
+                synth.onvoiceschanged = cargarVoces;
+            }
+        }
+
+        if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
+            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+            recognition = new SpeechRecognition();
+            recognition.lang = 'es-ES';
+            recognition.continuous = false;
+            recognition.interimResults = false;
+
+            recognition.onresult = function (event) {
+                const textoTranscrito = event.results[0][0].transcript;
+                document.getElementById('userInput').value = textoTranscrito;
+                procesarMensaje();
+            };
+
+            recognition.onerror = function (e) {
+                if (e.error === 'not-allowed' || e.error === 'service-not-allowed') {
+                    vozActiva = false;
+                    actualizarBadgeVoz();
+                    mostrarToast('No pude acceder al micrófono. Revisa los permisos del navegador.');
+                }
+            };
+            recognition.onend = function () { reiniciarEscuchaSiActiva(); };
+        }
+
+        function actualizarBadgeVoz() {
+            const badge = document.getElementById('statusBadge');
+            const statusText = document.getElementById('statusText');
+            const micBtn = document.getElementById('micBtn');
+            if (vozActiva) {
+                badge.classList.add('active');
+                statusText.innerText = 'Voz Activa (Escuchando)';
+                micBtn.classList.add('listening');
+            } else {
+                badge.classList.remove('active');
+                statusText.innerText = 'Voz Inactiva';
+                micBtn.classList.remove('listening');
+            }
+        }
+
+        function toggleVoz() {
+            vozActiva = !vozActiva;
+            actualizarBadgeVoz();
+
+            if (vozActiva) {
+                if (recognition) {
+                    try { recognition.start(); escuchandoVoz = true; } catch (e) {}
+                }
+            } else {
+                if (recognition && escuchandoVoz) {
+                    try { recognition.stop(); } catch (e) {}
+                    escuchandoVoz = false;
+                }
+            }
+        }
+
+        function reiniciarEscuchaSiActiva() {
+            if (vozActiva && recognition && !escuchandoVoz) {
+                try { recognition.start(); escuchandoVoz = true; } catch (e) { escuchandoVoz = false; }
+            } else if (!vozActiva) {
+                escuchandoVoz = false;
+            }
+        }
+
+        function hablar(texto) {
+            if (!synth) return;
+            synth.cancel();
+            let utterThis = new SpeechSynthesisUtterance(texto);
+            utterThis.lang = 'es-ES';
+            utterThis.rate = parseFloat(localStorage.getItem(LS.rate)) || 0.95;
+            utterThis.pitch = parseFloat(localStorage.getItem(LS.pitch)) || 1.05;
+
+            if (listaVoces.length === 0) cargarVoces();
+
+            const vozGuardada = localStorage.getItem(LS.voz);
+            let vozSeleccionada = null;
+            if (vozGuardada) vozSeleccionada = listaVoces.find(v => v.voiceURI === vozGuardada);
+            if (!vozSeleccionada) {
+                vozSeleccionada = listaVoces.find(v => v.lang.includes('es') && (v.name.includes('Google') || v.name.includes('Natural') || v.name.includes('Helena') || v.name.includes('Laura')));
+            }
+            if (!vozSeleccionada) {
+                vozSeleccionada = listaVoces.find(v => v.lang.startsWith('es'));
+            }
+            if (vozSeleccionada) utterThis.voice = vozSeleccionada;
+
+            synth.speak(utterThis);
+        }
+
+        function detenerVoz() {
+            if (synth) synth.cancel();
+        }
+
+        function hablarTexto(btn) {
+            const messageDiv = btn.closest('.message-wrapper').querySelector('.message');
+            if (messageDiv) hablar(messageDiv.innerText);
+        }
+
+        function copiarTexto(btn) {
+            const messageDiv = btn.closest('.message-wrapper').querySelector('.message');
+            if (!messageDiv) return;
+            const texto = messageDiv.innerText;
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                navigator.clipboard.writeText(texto).then(() => mostrarToast('Copiado al portapapeles ✅')).catch(() => mostrarToast('No se pudo copiar'));
+            } else {
+                mostrarToast('Tu navegador no permite copiar automáticamente');
+            }
+        }
+
+        /* =========================================================
+           PANEL DE AJUSTES
+        ========================================================= */
+        function alternarPanelAjustes() {
+            const panel = document.getElementById('settingsPanel');
+            panel.classList.toggle('open');
+            if (panel.classList.contains('open')) actualizarEstadisticas();
+        }
+
+        function guardarAjustesVoz() {
+            localStorage.setItem(LS.autospeak, document.getElementById('autospeakToggle').checked);
+            localStorage.setItem(LS.sonido, document.getElementById('soundToggle').checked);
+            localStorage.setItem(LS.voz, document.getElementById('voiceSelect').value);
+            localStorage.setItem(LS.rate, document.getElementById('rateRange').value);
+            localStorage.setItem(LS.pitch, document.getElementById('pitchRange').value);
+        }
+
+        function cargarAjustesVoz() {
+            document.getElementById('autospeakToggle').checked = localStorage.getItem(LS.autospeak) !== 'false';
+            document.getElementById('soundToggle').checked = localStorage.getItem(LS.sonido) === 'true';
+            document.getElementById('rateRange').value = localStorage.getItem(LS.rate) || '0.95';
+            document.getElementById('pitchRange').value = localStorage.getItem(LS.pitch) || '1.05';
+        }
+
+        function actualizarEstadisticas() {
+            const mensajesUsuario = historial.filter(m => m.tipo === 'user').length;
+            const mensajesIA = historial.filter(m => m.tipo === 'ai').length;
+            const minutos = Math.max(1, Math.round((Date.now() - sessionStart) / 60000));
+            document.getElementById('statsRow').innerHTML =
+                `Mensajes tuyos: <b>${mensajesUsuario}</b><br>Respuestas de EZPack: <b>${mensajesIA}</b><br>Tiempo en esta sesión: <b>${minutos} min</b>`;
+        }
+
+        function restablecerAjustes() {
+            if (!confirm('¿Restablecer todos los ajustes y borrar la conversación guardada? Esta acción no se puede deshacer.')) return;
+            Object.values(LS).forEach(k => localStorage.removeItem(k));
+            mostrarToast('Ajustes restablecidos. Recargando...');
+            setTimeout(() => location.reload(), 800);
+        }
+
+        /* =========================================================
+           MODOS
+        ========================================================= */
+        function setMode(modo) {
+            modoActual = modo;
+            localStorage.setItem(LS.modo, modo);
+            document.querySelectorAll('.mode-btn').forEach(btn => {
+                btn.classList.toggle('active', btn.innerText === modo);
+            });
+            const descripciones = {
+                Amigable: 'Modo Amigable: charla cercana y cálida. 😊',
+                Mate: 'Modo Mate: enfocado en resolver operaciones matemáticas. 🧮',
+                Experta: 'Modo Experta: respuestas más técnicas y directas. 🧠',
+                Omni: 'Modo Omni: considera todo el contexto disponible. 🌐',
+                Meme: 'Modo Meme: puro relajo y jerga. 😎'
+            };
+            agregarMensaje(descripciones[modo] || `Modo cambiado a ${modo}.`, 'ai');
+        }
+
+        /* =========================================================
+           RENDER DE MENSAJES, HISTORIAL Y SEPARADORES DE FECHA
+        ========================================================= */
+        function handleKeyPress(e) {
+            if (e.key === 'Enter') procesarMensaje();
+        }
+
+        function ejecutarAccion(texto) {
+            document.getElementById('userInput').value = texto;
+            actualizarContador();
+            procesarMensaje();
+        }
+
+        function actualizarContador() {
+            const input = document.getElementById('userInput');
+            const contador = document.getElementById('charCounter');
+            const len = input.value.length;
+            contador.textContent = `${len}/500`;
+            contador.classList.toggle('warning', len > 400 && len <= 480);
+            contador.classList.toggle('limit', len > 480);
+        }
+
+        function insertarSeparadorFechaSiCorresponde(fechaObj) {
+            const clave = fechaObj.toDateString();
+            if (clave === ultimaFechaSeparador) return;
+            ultimaFechaSeparador = clave;
+            const sep = document.createElement('div');
+            sep.className = 'date-separator';
+            sep.textContent = fechaCorta(fechaObj);
+            document.getElementById('chatContainer').appendChild(sep);
+        }
+
+        function estaAlFinal() {
+            const c = document.getElementById('chatContainer');
+            return c.scrollHeight - c.scrollTop - c.clientHeight < 60;
+        }
+
+        function irAlFinal() {
+            const c = document.getElementById('chatContainer');
+            c.scrollTop = c.scrollHeight;
+            document.getElementById('scrollBottomBtn').classList.remove('show');
+            const badge = document.getElementById('scrollBadge');
+            badge.classList.remove('show');
+            badge.textContent = '';
+        }
+
+        function crearWrapperMensaje(contenidoFinal, tipo, horaStr, avatar) {
+            const wrapper = document.createElement('div');
+            wrapper.className = `message-wrapper ${tipo}`;
+
+            const meta = document.createElement('div');
+            meta.className = 'message-meta';
+            meta.innerHTML = `${tipo === 'ai' ? `<span>${avatar || '📦'}</span>` : ''}<span>${horaStr}</span>`;
+            wrapper.appendChild(meta);
+
+            const msgDiv = document.createElement('div');
+            msgDiv.className = `message ${tipo}`;
+            msgDiv.innerHTML = contenidoFinal;
+            wrapper.appendChild(msgDiv);
+
+            if (tipo === 'ai') {
+                const actions = document.createElement('div');
+                actions.className = 'msg-actions';
+
+                const audioBtn = document.createElement('button');
+                audioBtn.className = 'speak-msg-btn';
+                audioBtn.innerHTML = '🔊 Escuchar';
+                audioBtn.setAttribute('aria-label', 'Escuchar este mensaje');
+                audioBtn.onclick = function () { hablarTexto(this); };
+                actions.appendChild(audioBtn);
+
+                const stopBtn = document.createElement('button');
+                stopBtn.className = 'stop-msg-btn';
+                stopBtn.innerHTML = '⏹️ Detener';
+                stopBtn.setAttribute('aria-label', 'Detener lectura en voz alta');
+                stopBtn.onclick = detenerVoz;
+                actions.appendChild(stopBtn);
+
+                const copyBtn = document.createElement('button');
+                copyBtn.className = 'copy-msg-btn';
+                copyBtn.innerHTML = '📋 Copiar';
+                copyBtn.setAttribute('aria-label', 'Copiar este mensaje');
+                copyBtn.onclick = function () { copiarTexto(this); };
+                actions.appendChild(copyBtn);
+
+                wrapper.appendChild(actions);
+            }
+
+            return wrapper;
+        }
+
+        function agregarMensaje(texto, tipo, esHTML = false, guardar = true) {
+            const contenidoFinal = esHTML ? texto : escaparHTML(texto);
+            const ahora = new Date();
+            const horaStr = horaCorta(ahora);
+            const avatar = tipo === 'ai' ? AVATARES[modoActual] : null;
+
+            const container = document.getElementById('chatContainer');
+            const alFinalAntes = estaAlFinal();
+
+            insertarSeparadorFechaSiCorresponde(ahora);
+            const wrapper = crearWrapperMensaje(contenidoFinal, tipo, horaStr, avatar);
+            container.appendChild(wrapper);
+
+            if (alFinalAntes || tipo === 'user') {
+                container.scrollTop = container.scrollHeight;
+            } else {
+                const btn = document.getElementById('scrollBottomBtn');
+                const badge = document.getElementById('scrollBadge');
+                btn.classList.add('show');
+                const n = (parseInt(badge.textContent, 10) || 0) + 1;
+                badge.textContent = n;
+                badge.classList.add('show');
+            }
+
+            if (guardar) {
+                historial.push({ tipo, contenido: contenidoFinal, hora: horaStr, avatar, fecha: ahora.toDateString() });
+                if (historial.length > 150) historial = historial.slice(-150);
+                localStorage.setItem(LS.historial, JSON.stringify(historial));
+            }
+
+            return wrapper;
+        }
+
+        document.getElementById('chatContainer').addEventListener('scroll', () => {
+            if (estaAlFinal()) irAlFinal();
+        });
+
+        function confirmarLimpiarChat() {
+            if (!confirm('¿Seguro que quieres borrar toda la conversación? No se puede deshacer.')) return;
+            limpiarChat();
+        }
+
+        function limpiarChat() {
+            detenerVoz();
+            historial = [];
+            ultimaFechaSeparador = '';
+            localStorage.removeItem(LS.historial);
+            document.getElementById('chatContainer').innerHTML = '';
+            mostrarSaludoInicial(false);
+            mostrarToast('Conversación borrada');
+        }
+
+        function exportarChat() {
+            if (historial.length === 0) {
+                mostrarToast('No hay conversación para exportar');
+                return;
+            }
+            const lineas = historial.map(m => {
+                const quien = m.tipo === 'user' ? 'Tú' : 'EZPack AI';
+                const textoPlano = m.contenido.replace(/<[^>]*>?/gm, '');
+                return `[${m.hora}] ${quien}: ${textoPlano}`;
+            });
+            const blob = new Blob([lineas.join('\n')], { type: 'text/plain;charset=utf-8' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `ezpack-chat-${new Date().toISOString().slice(0, 10)}.txt`;
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+            URL.revokeObjectURL(url);
+            mostrarToast('Conversación exportada ⬇️');
+        }
+
+        function mostrarSaludoInicial(guardar) {
+            const hora = new Date().getHours();
+            let saludo = 'Buenas noches';
+            if (hora >= 6 && hora < 12) saludo = 'Buenos días';
+            else if (hora >= 12 && hora < 20) saludo = 'Buenas tardes';
+            agregarMensaje(
+                `¡${saludo}! Qué gusto saludarte. Di o escribe <b>"Hey Pack"</b> para que platiquemos, pregunta la hora o fecha, consulta juegos, pide un chiste o usa el modo Mate. Escribe <b>"ayuda"</b> si quieres ver todo lo que sé hacer. ¡Aquí estoy para ayudarte! 😊`,
+                'ai', true, guardar
+            );
+        }
+
+        /* =========================================================
+           EVALUADOR MATEMÁTICO PROPIO (sin eval ni Function)
+           Soporta + - * / % ^ paréntesis y sqrt()
+        ========================================================= */
+        function tokenizarExpresion(str) {
+            const s = str.replace(/,/g, '.').toLowerCase().replace(/×/g, '*').replace(/÷/g, '/');
+            const tokens = [];
+            let i = 0;
+            while (i < s.length) {
+                const c = s[i];
+                if (/\s/.test(c)) { i++; continue; }
+                if (/[0-9.]/.test(c)) {
+                    let num = '';
+                    while (i < s.length && /[0-9.]/.test(s[i])) { num += s[i]; i++; }
+                    tokens.push({ tipo: 'num', val: parseFloat(num) });
+                    continue;
+                }
+                if ('+-*/%^()'.includes(c)) { tokens.push({ tipo: c }); i++; continue; }
+                if (s.substr(i, 4) === 'sqrt') { tokens.push({ tipo: 'sqrt' }); i += 4; continue; }
+                throw new Error('carácter no permitido: ' + c);
+            }
+            return tokens;
+        }
+
+        function calcularSeguro(expresion) {
+            const limpio = expresion.trim();
+            if (!limpio) throw new Error('Expresión vacía');
+            const tokens = tokenizarExpresion(limpio);
+            let pos = 0;
+            const peek = () => tokens[pos];
+            const next = () => tokens[pos++];
+
+            function parseExpr() {
+                let left = parseTerm();
+                while (peek() && (peek().tipo === '+' || peek().tipo === '-')) {
+                    const op = next().tipo;
+                    const right = parseTerm();
+                    left = op === '+' ? left + right : left - right;
+                }
+                return left;
+            }
+            function parseTerm() {
+                let left = parseFactor();
+                while (peek() && (peek().tipo === '*' || peek().tipo === '/' || peek().tipo === '%')) {
+                    const op = next().tipo;
+                    const right = parseFactor();
+                    if (op === '*') left *= right;
+                    else if (op === '/') { if (right === 0) throw new Error('división entre cero'); left /= right; }
+                    else left %= right;
+                }
+                return left;
+            }
+            function parseFactor() {
+                let base = parseUnary();
+                if (peek() && peek().tipo === '^') {
+                    next();
+                    const exp = parseFactor();
+                    base = Math.pow(base, exp);
+                }
+                return base;
+            }
+            function parseUnary() {
+                if (peek() && peek().tipo === '-') { next(); return -parseUnary(); }
+                if (peek() && peek().tipo === '+') { next(); return parseUnary(); }
+                return parsePrimary();
+            }
+            function parsePrimary() {
+                const t = peek();
+                if (!t) throw new Error('expresión incompleta');
+                if (t.tipo === '(') {
+                    next();
+                    const v = parseExpr();
+                    if (!peek() || peek().tipo !== ')') throw new Error('falta paréntesis');
+                    next();
+                    return v;
+                }
+                if (t.tipo === 'sqrt') {
+                    next();
+                    if (!peek() || peek().tipo !== '(') throw new Error('se esperaba ( después de sqrt');
+                    next();
+                    const v = parseExpr();
+                    if (!peek() || peek().tipo !== ')') throw new Error('falta paréntesis en sqrt');
+                    next();
+                    if (v < 0) throw new Error('raíz de número negativo');
+                    return Math.sqrt(v);
+                }
+                if (t.tipo === 'num') { next(); return t.val; }
+                throw new Error('token inesperado');
+            }
+
+            const resultado = parseExpr();
+            if (pos !== tokens.length) throw new Error('sobran símbolos en la expresión');
+            if (typeof resultado !== 'number' || !isFinite(resultado)) throw new Error('resultado inválido');
+            return Math.round(resultado * 1e10) / 1e10;
+        }
+
+        /* =========================================================
+           CONVERSOR DE UNIDADES
+        ========================================================= */
+        function convertirUnidad(valor, de, a) {
+            const tabla = {
+                'celsius->fahrenheit': v => v * 9 / 5 + 32,
+                'fahrenheit->celsius': v => (v - 32) * 5 / 9,
+                'km->millas': v => v * 0.621371,
+                'millas->km': v => v / 0.621371,
+                'kg->lb': v => v * 2.20462,
+                'lb->kg': v => v / 2.20462
+            };
+            const fn = tabla[`${de}->${a}`];
+            return fn ? Math.round(fn(valor) * 100) / 100 : null;
+        }
+
+        /* =========================================================
+           NOTAS RÁPIDAS
+        ========================================================= */
+        function cargarNotas() {
+            try { notas = JSON.parse(localStorage.getItem(LS.notas)) || []; } catch (e) { notas = []; }
+        }
+        function guardarNotas() {
+            localStorage.setItem(LS.notas, JSON.stringify(notas));
+        }
+
+        /* =========================================================
+           REGISTRO MODULAR DE COMANDOS
+           Cada entrada intenta responder; si no aplica, retorna null.
+           ctx = { texto (original), t (minúsculas), tN (sin acentos/minúsculas) }
+        ========================================================= */
+        const AYUDA_ITEMS = [
+            { ej: 'hora / fecha', desc: 'la hora o fecha actual' },
+            { ej: 'hora en tokio | londres | madrid | nueva york | los ángeles | cdmx | buenos aires | parís', desc: 'la hora en otras ciudades' },
+            { ej: 'abrir youtube / spotify / gd', desc: 'abre esa web en una pestaña nueva' },
+            { ej: 'mate: 45*12+8', desc: 'resuelve operaciones (+ − × ÷ % ^ y sqrt)' },
+            { ej: 'convierte 100 celsius a fahrenheit', desc: 'convierte temperatura, km↔millas o kg↔lb' },
+            { ej: 'dado / moneda / número aleatorio entre 1 y 100', desc: 'tira un dado, lanza una moneda o da un número al azar' },
+            { ej: 'contraseña', desc: 'genera una contraseña segura' },
+            { ej: 'mayúsculas: texto / minúsculas: texto', desc: 'cambia el formato del texto' },
+            { ej: 'contar palabras: texto', desc: 'cuenta palabras y caracteres' },
+            { ej: 'nota: texto / ver notas / borrar notas', desc: 'guarda notas rápidas en este navegador' },
+            { ej: 'temporizador 5 minutos', desc: 'te avisa aquí cuando el tiempo termine' },
+            { ej: 'buscar en internet algo', desc: 'abre una búsqueda en Google' },
+            { ej: 'buscar en wikipedia algo', desc: 'abre el artículo en Wikipedia' },
+            { ej: 'estadísticas', desc: 'muestra datos de esta conversación' },
+            { ej: 'chiste', desc: 'te cuenta un chiste' }
+        ];
+
+        function construirAyuda() {
+            const lista = AYUDA_ITEMS.map(i => `• <b>${i.ej}</b>: ${i.desc}`).join('<br>');
+            return `Esto es lo que sé hacer:<br>${lista}<br><br>También puedo platicar contigo en distintos modos (Amigable, Mate, Experta, Omni, Meme) desde los botones de arriba. ¡Pruébame! 😊`;
+        }
+
+        const COMANDOS = [
+            // ayuda
+            ctx => (ctx.tN.includes('ayuda') || ctx.t === '?') ? { texto: construirAyuda(), esHTML: true } : null,
+
+            // hora en <ciudad>
+            ctx => {
+                if (!ctx.tN.includes('hora en ')) return null;
+                const consulta = ctx.tN.split('hora en ')[1].trim();
+                const encontrada = Object.keys(CIUDADES_TZ).find(k => consulta.includes(normalizar(k)));
+                if (!encontrada) return { texto: 'No tengo esa ciudad en mi lista. Prueba con Tokio, Londres, Madrid, Nueva York, Los Ángeles, CDMX, Buenos Aires o París.', esHTML: false };
+                const horaCiudad = new Date().toLocaleTimeString('es-ES', { timeZone: CIUDADES_TZ[encontrada], hour: '2-digit', minute: '2-digit' });
+                return { texto: `En ${encontrada} son las ${horaCiudad}.`, esHTML: false };
+            },
+
+            // hora (genérico)
+            ctx => ctx.tN.includes('hora') ? { texto: `¡Claro! En este momento son las ${horaCorta(new Date())}.`, esHTML: false } : null,
+
+            // fecha
+            ctx => (ctx.tN.includes('fecha') || ctx.tN.includes('que dia es')) ? { texto: `Hoy es ${fechaCorta(new Date())}.`, esHTML: false } : null,
+
+            // abrir youtube / spotify / gd
+            ctx => ctx.tN.includes('abrir youtube') ? (window.open('https://youtube.com', '_blank'), { texto: '¡Perfecto! Te abro YouTube en un instante para que disfrutes de tus videos. 📺', esHTML: false }) : null,
+            ctx => ctx.tN.includes('abrir spotify') ? (window.open('https://open.spotify.com', '_blank'), { texto: '¡Entendido! Abriendo Spotify para que le des play a tu música. 🎧', esHTML: false }) : null,
+            ctx => (ctx.tN.includes('abrir geometria dash') || ctx.tN.includes('abrir gd')) ? (window.open('https://poki.com/es/g/geometry-dash', '_blank'), { texto: '¡Excelente elección! Abriendo los juegos web para pasar un buen rato. 🎮', esHTML: false }) : null,
+
+            // mate:
+            ctx => {
+                if (!(ctx.tN.startsWith('mate:') || ctx.tN.startsWith('mate ') || ctx.tN === 'mate')) return null;
+                const operacion = ctx.tN.replace('mate:', '').replace('mate', '').trim();
+                if (!operacion) return { texto: '¡Modo Mate! Dime una operación así: <b>mate: 45*12+8</b> y la resolvemos. 🧮', esHTML: true };
+                try {
+                    const resultado = calcularSeguro(operacion);
+                    return { texto: `¡Listo! El resultado de resolver <b>${escaparHTML(operacion)}</b> es <b>${resultado}</b>. 🧮✨`, esHTML: true };
+                } catch (err) {
+                    return { texto: 'Ay, tuve un pequeño desliz calculando eso. Solo puedo usar números, + − × ÷ % ^ paréntesis y sqrt(). ¿Revisamos la operación?', esHTML: false };
+                }
+            },
+
+            // mem reduct
+            ctx => ctx.tN.includes('mem reduct') ? { texto: '<b>Mem Reduct</b> es una herramienta súper útil y ligera para Windows que te ayuda a liberar memoria RAM y mantener tu compu al máximo rendimiento. ¡Te la recomiendo mucho!', esHTML: true } : null,
+
+            // convierte X unidad a unidad
+            ctx => {
+                const m = ctx.tN.match(/convierte\s+([\d.,]+)\s*(celsius|fahrenheit|km|millas|kg|lb)\s+a\s+(celsius|fahrenheit|km|millas|kg|lb)/);
+                if (!m) return null;
+                const valor = parseFloat(m[1].replace(',', '.'));
+                const resultado = convertirUnidad(valor, m[2], m[3]);
+                if (resultado === null) return { texto: 'Esa conversión no la tengo disponible todavía. Puedo hacer celsius↔fahrenheit, km↔millas y kg↔lb.', esHTML: false };
+                return { texto: `${valor} ${m[2]} equivale a <b>${resultado} ${m[3]}</b>.`, esHTML: true };
+            },
+
+            // dado
+            ctx => ctx.tN.includes('dado') ? { texto: `🎲 Salió un ${Math.ceil(Math.random() * 6)}.`, esHTML: false } : null,
+
+            // moneda
+            ctx => ctx.tN.includes('moneda') ? { texto: `🪙 Salió ${Math.random() < 0.5 ? 'cara' : 'cruz'}.`, esHTML: false } : null,
+
+            // número aleatorio
+            ctx => {
+                if (!ctx.tN.includes('numero aleatorio')) return null;
+                const m = ctx.tN.match(/(\d+)\s*(?:y|-)\s*(\d+)/);
+                const min = m ? parseInt(m[1], 10) : 1;
+                const max = m ? parseInt(m[2], 10) : 100;
+                const lo = Math.min(min, max), hi = Math.max(min, max);
+                const n = Math.floor(Math.random() * (hi - lo + 1)) + lo;
+                return { texto: `🔢 Tu número es: <b>${n}</b> (entre ${lo} y ${hi}).`, esHTML: true };
+            },
+
+            // contraseña
+            ctx => {
+                if (!ctx.tN.includes('contrasena')) return null;
+                const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789!@#$%&*';
+                const arr = new Uint32Array(14);
+                crypto.getRandomValues(arr);
+                const pass = Array.from(arr, n => chars[n % chars.length]).join('');
+                return { texto: `🔑 Aquí tienes una contraseña segura: <b>${pass}</b><br><small>Guárdala en un lugar seguro, no la volveré a mostrar.</small>`, esHTML: true };
+            },
+
+            // mayúsculas: / minúsculas:  (se usan sobre el texto original, no normalizado)
+            ctx => {
+                const m = ctx.texto.match(/^may[uú]sculas:\s*(.+)/i);
+                return m ? { texto: escaparHTML(m[1].toUpperCase()), esHTML: true } : null;
+            },
+            ctx => {
+                const m = ctx.texto.match(/^min[uú]sculas:\s*(.+)/i);
+                return m ? { texto: escaparHTML(m[1].toLowerCase()), esHTML: true } : null;
+            },
+
+            // contar palabras:
+            ctx => {
+                const m = ctx.texto.match(/^contar palabras:\s*(.+)/i);
+                if (!m) return null;
+                const contenido = m[1].trim();
+                const palabras = contenido.split(/\s+/).filter(Boolean).length;
+                return { texto: `📝 Ese texto tiene <b>${palabras}</b> palabras y <b>${contenido.length}</b> caracteres.`, esHTML: true };
+            },
+
+            // nota:
+            ctx => {
+                const m = ctx.texto.match(/^nota:\s*(.+)/i);
+                if (!m) return null;
+                notas.push(m[1].trim());
+                guardarNotas();
+                return { texto: `🗒️ Nota guardada. Ahora tienes <b>${notas.length}</b> nota(s). Escribe "ver notas" para revisarlas.`, esHTML: true };
+            },
+            // ver notas
+            ctx => {
+                if (!ctx.tN.includes('ver notas')) return null;
+                if (notas.length === 0) return { texto: 'Todavía no tienes notas guardadas. Escribe "nota: lo que quieras recordar".', esHTML: false };
+                const lista = notas.map((n, i) => `${i + 1}. ${escaparHTML(n)}`).join('<br>');
+                return { texto: `🗒️ Tus notas:<br>${lista}`, esHTML: true };
+            },
+            // borrar notas
+            ctx => {
+                if (!ctx.tN.includes('borrar notas')) return null;
+                notas = [];
+                guardarNotas();
+                return { texto: 'Listo, borré todas tus notas.', esHTML: false };
+            },
+
+            // temporizador
+            ctx => {
+                const m = ctx.tN.match(/temporizador\s+(\d+)\s*(minuto|minutos|segundo|segundos)/);
+                if (!m) return null;
+                const cantidad = parseInt(m[1], 10);
+                const esMinutos = m[2].startsWith('minuto');
+                const ms = cantidad * (esMinutos ? 60000 : 1000);
+                setTimeout(() => {
+                    agregarMensaje(`⏱️ ¡Se cumplió tu temporizador de ${cantidad} ${esMinutos ? 'minuto(s)' : 'segundo(s)'}!`, 'ai');
+                    reproducirBeep();
+                    mostrarToast('¡Temporizador terminado! ⏱️');
+                }, ms);
+                return { texto: `⏱️ Temporizador iniciado por ${cantidad} ${esMinutos ? 'minuto(s)' : 'segundo(s)'}. Te aviso aquí cuando termine.`, esHTML: false };
+            },
+
+            // buscar en internet
+            ctx => {
+                const m = ctx.texto.match(/buscar en internet\s+(.+)/i);
+                if (!m) return null;
+                window.open('https://www.google.com/search?q=' + encodeURIComponent(m[1].trim()), '_blank');
+                return { texto: `🔎 Abrí una búsqueda sobre "${escaparHTML(m[1].trim())}" en Google.`, esHTML: true };
+            },
+            // buscar en wikipedia
+            ctx => {
+                const m = ctx.texto.match(/buscar en wikipedia\s+(.+)/i);
+                if (!m) return null;
+                window.open('https://es.wikipedia.org/wiki/Special:Search?search=' + encodeURIComponent(m[1].trim()), '_blank');
+                return { texto: `📖 Abrí Wikipedia buscando "${escaparHTML(m[1].trim())}".`, esHTML: true };
+            },
+
+            // chiste
+            ctx => ctx.tN.includes('chiste') ? { texto: CHISTES[Math.floor(Math.random() * CHISTES.length)], esHTML: false } : null,
+
+            // estadísticas
+            ctx => {
+                if (!ctx.tN.includes('estadistic')) return null;
+                const mensajesUsuario = historial.filter(m => m.tipo === 'user').length;
+                const mensajesIA = historial.filter(m => m.tipo === 'ai').length;
+                const minutos = Math.max(1, Math.round((Date.now() - sessionStart) / 60000));
+                return { texto: `📊 Llevamos <b>${mensajesUsuario}</b> mensajes tuyos y <b>${mensajesIA}</b> respuestas mías, en <b>${minutos}</b> minuto(s) de esta sesión.`, esHTML: true };
+            },
+
+            // quién eres
+            ctx => (ctx.tN.includes('quien eres')) ? { texto: 'Soy <b>EZPack AI</b>, tu asistente ligero que corre directo en el navegador: sin servidores ni configuraciones complicadas. 📦', esHTML: true } : null,
+
+            // gracias
+            ctx => ctx.tN.includes('gracias') ? { texto: '¡Con mucho gusto! Aquí ando para lo que necesites. 😊', esHTML: false } : null,
+
+            // saludo
+            ctx => /^(hola|buenas|hey)\b/.test(ctx.tN) ? { texto: '¡Hola! Qué bueno tenerte por aquí. ¿En qué te ayudo hoy?', esHTML: false } : null
+        ];
+
+        function respuestaPorModo(texto) {
+            if (modoActual === 'Mate') {
+                return { texto: "¡Modo Mate activado! Escribe una operación usando 'mate: [operación]' y con gusto la resolvemos juntos.", esHTML: false };
+            } else if (modoActual === 'Meme') {
+                return { texto: '¡Claro que sí, crack! Aquí andamos al 100 y listos para lo que se ofrezca Bv 😎📦', esHTML: false };
+            } else if (modoActual === 'Experta') {
+                return { texto: `He analizado tu consulta: "${escaparHTML(texto)}". Con la información disponible localmente no tengo una respuesta específica, pero puedo ayudarte con hora, fecha, cálculos, conversiones, notas o abrir apps.`, esHTML: true };
+            } else if (modoActual === 'Omni') {
+                return { texto: `Tomando en cuenta todo el contexto: dime si necesitas la hora, un cálculo, una conversión o simplemente platicar sobre "${escaparHTML(texto)}". Aquí estoy para lo que sea. 🌐`, esHTML: true };
+            }
+            return { texto: `¡Qué interesante lo que comentas sobre "${escaparHTML(texto)}"! Me encanta ayudarte en todo lo que necesites desde casa. ¿Qué más hacemos? 😊`, esHTML: true };
+        }
+
+        /* =========================================================
+           PROCESAMIENTO PRINCIPAL
+        ========================================================= */
+        function procesarMensaje() {
+            if (procesando) return;
+            const input = document.getElementById('userInput');
+            let texto = input.value.trim();
+            if (!texto) return;
+
+            agregarMensaje(texto, 'user');
+            input.value = '';
+            actualizarContador();
+            procesando = true;
+            document.getElementById('sendBtn').disabled = true;
+
+            let t = texto.toLowerCase();
+            if (t.startsWith('hey pack')) t = t.replace('hey pack', '').trim();
+            const tN = normalizar(t);
+
+            mostrarEscribiendo();
+
+            setTimeout(() => {
+                quitarEscribiendo();
+
+                const ctx = { texto, t, tN };
+                let resultado = null;
+                for (const comando of COMANDOS) {
+                    resultado = comando(ctx);
+                    if (resultado) break;
+                }
+                if (!resultado) resultado = respuestaPorModo(texto);
+
+                agregarMensaje(resultado.texto, 'ai', resultado.esHTML);
+                reproducirBeep();
+
+                const autospeak = localStorage.getItem(LS.autospeak) !== 'false';
+                if (autospeak) {
+                    const textoLimpio = resultado.texto.replace(/<[^>]*>?/gm, '');
+                    hablar(textoLimpio);
+                }
+
+                procesando = false;
+                document.getElementById('sendBtn').disabled = false;
+                document.getElementById('userInput').focus();
+            }, 450);
+        }
+
+        function mostrarEscribiendo() {
+            const container = document.getElementById('chatContainer');
+            const wrapper = document.createElement('div');
+            wrapper.className = 'message-wrapper ai';
+            wrapper.id = 'typingIndicator';
+            wrapper.setAttribute('aria-hidden', 'true');
+            wrapper.innerHTML = `<div class="message ai"><div class="typing-dots"><span></span><span></span><span></span></div></div>`;
+            container.appendChild(wrapper);
+            container.scrollTop = container.scrollHeight;
+        }
+
+        function quitarEscribiendo() {
+            const el = document.getElementById('typingIndicator');
+            if (el) el.remove();
+        }
+
+        /* =========================================================
+           ATAJOS DE TECLADO
+        ========================================================= */
+        document.addEventListener('keydown', (e) => {
+            const input = document.getElementById('userInput');
+            if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') {
+                e.preventDefault();
+                input.focus();
+            } else if (e.key === 'Escape' && document.activeElement === input) {
+                input.value = '';
+                actualizarContador();
+            }
+        });
+
+        /* =========================================================
+           INICIALIZACIÓN
+        ========================================================= */
+        function iniciar() {
+            aplicarTema(localStorage.getItem(LS.tema) || (window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark'));
+            cargarAjustesVoz();
+            cargarNotas();
+
+            const modoGuardado = localStorage.getItem(LS.modo);
+            if (modoGuardado && AVATARES[modoGuardado]) {
+                modoActual = modoGuardado;
+                document.querySelectorAll('.mode-btn').forEach(btn => {
+                    btn.classList.toggle('active', btn.innerText === modoGuardado);
+                });
+            }
+
+            let historialGuardado = [];
+            try { historialGuardado = JSON.parse(localStorage.getItem(LS.historial)) || []; } catch (e) { historialGuardado = []; }
+
+            if (historialGuardado.length > 0) {
+                const container = document.getElementById('chatContainer');
+                historialGuardado.forEach(m => {
+                    const fechaObj = new Date(m.fecha);
+                    insertarSeparadorFechaSiCorresponde(isNaN(fechaObj) ? new Date() : fechaObj);
+                    const wrapper = crearWrapperMensaje(m.contenido, m.tipo, m.hora, m.avatar);
+                    container.appendChild(wrapper);
+                });
+                historial = historialGuardado;
+                container.scrollTop = container.scrollHeight;
+            } else {
+                mostrarSaludoInicial(true);
+            }
+
+            actualizarContador();
+        }
+
+        iniciar();
+    </script>
+</body>
+</html>
