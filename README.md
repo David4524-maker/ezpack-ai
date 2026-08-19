@@ -1,3 +1,481 @@
+[EZPack AI - Tu Asistente Util Basico.html](https://github.com/user-attachments/files/31241147/EZPack.AI.-.Tu.Asistente.Util.Basico.html)
 <img width="1919" height="929" alt="Captura de pantalla 2026-08-16 183410" src="https://github.com/user-attachments/assets/45a5c9da-30cd-4698-81d8-50042d7eeb39" />
 <img width="960" height="932" alt="Captura de pantalla 2026-08-15 150046" src="https://github.com/user-attachments/assets/efe6ca81-85f9-4cc3-9d43-ea235a34675b" />
 <img width="950" height="934" alt="Captura de pantalla 2026-08-14 213236" src="https://github.com/user-attachments/assets/dab77f58-ed71-4a34-b4c5-64977b4d3437" />
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EZPack AI</title>
+    <style>
+        :root {
+            --bg-color: #0b0f19;
+            --panel-bg: #111827;
+            --text-color: #f3f4f6;
+            --accent-color: #3b82f6;
+            --border-color: #1f2937;
+            --bubble-user: #1d4ed8;
+            --bubble-ai: #1f2937;
+            --danger-color: #dc2626;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: system-ui, -apple-system, sans-serif; }
+        body { background-color: var(--bg-color); color: var(--text-color); display: flex; flex-direction: column; height: 100vh; overflow: hidden; }
+
+        /* Header */
+        header { background-color: var(--panel-bg); border-bottom: 1px solid var(--border-color); padding: 12px 20px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px; }
+        .logo-area { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+        .logo-box { font-size: 1.5rem; }
+        .title { font-weight: bold; font-size: 1.1rem; letter-spacing: 0.5px; }
+        .status-badge { background-color: #7f1d1d; color: #fca5a5; font-size: 0.75rem; padding: 3px 8px; border-radius: 12px; display: flex; align-items: center; gap: 5px; font-weight: 500; }
+        .status-badge.active { background-color: #065f46; color: #6ee7b7; }
+        .status-dot { width: 6px; height: 6px; background-color: currentColor; border-radius: 50%; }
+
+        .header-right { display: flex; align-items: center; gap: 10px; }
+        .modes { display: flex; gap: 6px; flex-wrap: wrap; }
+        .mode-btn { background: var(--border-color); color: var(--text-color); border: none; padding: 6px 12px; border-radius: 6px; font-size: 0.85rem; cursor: pointer; transition: background 0.2s; }
+        .mode-btn.active, .mode-btn:hover { background-color: var(--accent-color); }
+        .mode-btn:focus-visible, .icon-btn:focus-visible, .chip:focus-visible, .send-btn:focus-visible {
+            outline: 2px solid #93c5fd; outline-offset: 2px;
+        }
+
+        .clear-btn { background: none; border: 1px solid var(--border-color); color: #9ca3af; padding: 6px 10px; border-radius: 6px; font-size: 0.8rem; cursor: pointer; transition: color 0.2s, border-color 0.2s; }
+        .clear-btn:hover { color: var(--danger-color); border-color: var(--danger-color); }
+
+        /* Chat Container */
+        .chat-container { flex: 1; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; gap: 15px; }
+        .message-wrapper { display: flex; flex-direction: column; max-width: 80%; }
+        .message-wrapper.ai { align-self: flex-start; }
+        .message-wrapper.user { align-self: flex-end; }
+
+        .message { padding: 12px 16px; border-radius: 12px; line-height: 1.5; font-size: 0.95rem; word-break: break-word; }
+        .message.ai { background-color: var(--bubble-ai); border-bottom-left-radius: 4px; }
+        .message.user { background-color: var(--bubble-user); border-bottom-right-radius: 4px; }
+
+        /* Indicador de "escribiendo" */
+        .typing-dots { display: flex; gap: 4px; padding: 4px 2px; }
+        .typing-dots span { width: 6px; height: 6px; background: #9ca3af; border-radius: 50%; animation: bounce 1.2s infinite; }
+        .typing-dots span:nth-child(2) { animation-delay: 0.15s; }
+        .typing-dots span:nth-child(3) { animation-delay: 0.3s; }
+        @keyframes bounce { 0%, 60%, 100% { transform: translateY(0); opacity: 0.5; } 30% { transform: translateY(-4px); opacity: 1; } }
+
+        /* Botones de acción de mensaje */
+        .msg-actions { display: flex; gap: 10px; margin-top: 4px; }
+        .speak-msg-btn, .stop-msg-btn { background: none; border: none; color: #9ca3af; font-size: 0.75rem; cursor: pointer; align-self: flex-start; display: flex; align-items: center; gap: 4px; padding: 2px 4px; border-radius: 4px; transition: color 0.2s, background 0.2s; }
+        .speak-msg-btn:hover, .stop-msg-btn:hover { color: #f3f4f6; background: rgba(255,255,255,0.05); }
+
+        /* Quick Chips */
+        .chips-container { padding: 10px 20px; display: flex; gap: 8px; overflow-x: auto; background-color: rgba(17, 24, 39, 0.5); }
+        .chip { background: var(--border-color); border: none; color: var(--text-color); padding: 6px 12px; border-radius: 16px; font-size: 0.8rem; cursor: pointer; white-space: nowrap; transition: background 0.2s; }
+        .chip:hover { background: #374151; }
+
+        /* Input Area */
+        .input-area { background-color: var(--panel-bg); border-top: 1px solid var(--border-color); padding: 15px 20px; display: flex; align-items: center; gap: 10px; }
+        .icon-btn { background: var(--border-color); border: none; color: var(--text-color); width: 40px; height: 40px; border-radius: 8px; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 1.1rem; transition: background 0.2s; flex-shrink: 0; }
+        .icon-btn:hover { background: #374151; }
+        .icon-btn.listening { background-color: #dc2626; color: white; animation: pulse 1.5s infinite; }
+
+        input[type="text"] { flex: 1; min-width: 0; background: var(--bg-color); border: 1px solid var(--border-color); border-radius: 8px; padding: 12px 15px; color: var(--text-color); font-size: 0.95rem; outline: none; }
+        input[type="text"]:focus { border-color: var(--accent-color); }
+
+        .send-btn { background-color: var(--accent-color); color: white; border: none; padding: 0 20px; height: 40px; border-radius: 8px; font-weight: bold; cursor: pointer; transition: background 0.2s; flex-shrink: 0; }
+        .send-btn:hover { background-color: #2563eb; }
+        .send-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.6; }
+            100% { opacity: 1; }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            .icon-btn.listening, .typing-dots span { animation: none; }
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <div class="logo-area">
+            <span class="logo-box">📦</span>
+            <span class="title">EZPack AI</span>
+            <div id="statusBadge" class="status-badge">
+                <div class="status-dot"></div>
+                <span id="statusText">Voz Inactiva</span>
+            </div>
+        </div>
+        <div class="header-right">
+            <div class="modes">
+                <button class="mode-btn active" onclick="setMode('Amigable')">Amigable</button>
+                <button class="mode-btn" onclick="setMode('Mate')">Mate</button>
+                <button class="mode-btn" onclick="setMode('Experta')">Experta</button>
+                <button class="mode-btn" onclick="setMode('Omni')">Omni</button>
+                <button class="mode-btn" onclick="setMode('Meme')">Meme</button>
+            </div>
+            <button class="clear-btn" onclick="limpiarChat()" title="Borrar conversación">🗑️ Limpiar</button>
+        </div>
+    </header>
+
+    <div class="chat-container" id="chatContainer">
+        <div class="message-wrapper ai">
+            <div class="message ai">¡Hola! Qué gusto saludarte. Di o escribe <b>"Hey Pack"</b> para que platiquemos, pregunta la hora o fecha, consulta juegos, pide un chiste o usa el modo Mate. Escribe <b>"ayuda"</b> si quieres ver todo lo que sé hacer. ¡Aquí estoy para ayudarte! 😊</div>
+            <div class="msg-actions">
+                <button class="speak-msg-btn" onclick="hablarTexto(this)">🔊 Escuchar</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="chips-container">
+        <button class="chip" onclick="ejecutarAccion('¿Qué hora es?')">⏰ ¿Qué hora es?</button>
+        <button class="chip" onclick="ejecutarAccion('¿Qué fecha es?')">📅 ¿Qué fecha es?</button>
+        <button class="chip" onclick="ejecutarAccion('abrir youtube')">📺 Abrir YouTube</button>
+        <button class="chip" onclick="ejecutarAccion('abrir spotify')">🎧 Abrir Spotify</button>
+        <button class="chip" onclick="ejecutarAccion('mate: 45*12+8')">🧮 Mate: 45*12+8</button>
+        <button class="chip" onclick="ejecutarAccion('cuéntame un chiste')">😂 Cuéntame un chiste</button>
+        <button class="chip" onclick="ejecutarAccion('ayuda')">❓ Ayuda</button>
+    </div>
+
+    <div class="input-area">
+        <button class="icon-btn" onclick="toggleVoz()" id="micBtn" title="Activar/Desactivar Micrófono">🎙️</button>
+        <input type="text" id="userInput" placeholder="Di 'Hey Pack' o escribe aquí..." onkeypress="handleKeyPress(event)">
+        <button class="send-btn" onclick="procesarMensaje()" id="sendBtn">Enviar</button>
+    </div>
+
+    <script>
+        let modoActual = 'Amigable';
+        let vozActiva = false;
+        let synth = window.speechSynthesis;
+        let recognition = null;
+        let escuchandoVoz = false;
+        let listaVoces = [];
+        let procesando = false;
+
+        const CHISTES = [
+            "¿Por qué los pájaros no usan Facebook? Porque ya tienen Twitter. 🐦",
+            "¿Qué le dijo un semáforo a otro? No me mires que me estoy cambiando. 🚦",
+            "¿Cómo se llama el campeón de buceo japonés? Tokofondo. 🤿",
+            "¿Qué hace una abeja en el gimnasio? Zum-ba. 🐝"
+        ];
+
+        // Cargar y seleccionar la voz más natural/amigable disponible en el sistema
+        function cargarVoces() {
+            if (!synth) return;
+            listaVoces = synth.getVoices();
+        }
+
+        if (synth) {
+            cargarVoces();
+            if (synth.onvoiceschanged !== undefined) {
+                synth.onvoiceschanged = cargarVoces;
+            }
+        }
+
+        // Configurar Reconocimiento de Voz (escucha continua mientras el micrófono esté activo)
+        if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
+            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+            recognition = new SpeechRecognition();
+            recognition.lang = 'es-ES';
+            recognition.continuous = false;
+            recognition.interimResults = false;
+
+            recognition.onresult = function(event) {
+                const textoTranscrito = event.results[0][0].transcript;
+                document.getElementById('userInput').value = textoTranscrito;
+                procesarMensaje();
+            };
+
+            recognition.onerror = function(e) {
+                if (e.error === 'not-allowed' || e.error === 'service-not-allowed') {
+                    vozActiva = false;
+                    actualizarBadgeVoz();
+                }
+            };
+            recognition.onend = function() { reiniciarEscuchaSiActiva(); };
+        }
+
+        function actualizarBadgeVoz() {
+            const badge = document.getElementById('statusBadge');
+            const statusText = document.getElementById('statusText');
+            const micBtn = document.getElementById('micBtn');
+            if (vozActiva) {
+                badge.classList.add('active');
+                statusText.innerText = 'Voz Activa (Escuchando)';
+                micBtn.classList.add('listening');
+            } else {
+                badge.classList.remove('active');
+                statusText.innerText = 'Voz Inactiva';
+                micBtn.classList.remove('listening');
+            }
+        }
+
+        function toggleVoz() {
+            vozActiva = !vozActiva;
+            actualizarBadgeVoz();
+
+            if (vozActiva) {
+                if (recognition) {
+                    try { recognition.start(); escuchandoVoz = true; } catch (e) {}
+                }
+            } else {
+                if (recognition && escuchandoVoz) {
+                    recognition.stop();
+                    escuchandoVoz = false;
+                }
+            }
+        }
+
+        // Reinicia la escucha automáticamente para simular modo "siempre activo" mientras vozActiva sea true
+        function reiniciarEscuchaSiActiva() {
+            if (vozActiva && recognition) {
+                try { recognition.start(); escuchandoVoz = true; } catch (e) { escuchandoVoz = false; }
+            } else {
+                escuchandoVoz = false;
+            }
+        }
+
+        function hablar(texto) {
+            if (!synth) return;
+            synth.cancel();
+            let utterThis = new SpeechSynthesisUtterance(texto);
+            utterThis.lang = 'es-ES';
+
+            // Ajustes para una entonación más cálida, amigable y natural
+            utterThis.rate = 0.95;  // Ligeramente más pausado para sonar más cercano
+            utterThis.pitch = 1.05; // Un tono un poquito más amable y dinámico
+
+            // Intentar encontrar la mejor voz en español (Google o voces nativas optimizadas)
+            if (listaVoces.length === 0) cargarVoces();
+
+            let vozSeleccionada = listaVoces.find(v => v.lang.includes('es') && (v.name.includes('Google') || v.name.includes('Natural') || v.name.includes('Helena') || v.name.includes('Laura')));
+            if (!vozSeleccionada) {
+                vozSeleccionada = listaVoces.find(v => v.lang.startsWith('es'));
+            }
+
+            if (vozSeleccionada) {
+                utterThis.voice = vozSeleccionada;
+            }
+
+            synth.speak(utterThis);
+        }
+
+        function detenerVoz() {
+            if (synth) synth.cancel();
+        }
+
+        function hablarTexto(btn) {
+            const messageDiv = btn.closest('.message-wrapper').querySelector('.message');
+            if (messageDiv) {
+                hablar(messageDiv.innerText);
+            }
+        }
+
+        function setMode(modo) {
+            modoActual = modo;
+            document.querySelectorAll('.mode-btn').forEach(btn => {
+                btn.classList.toggle('active', btn.innerText === modo);
+            });
+        }
+
+        function handleKeyPress(e) {
+            if (e.key === 'Enter') procesarMensaje();
+        }
+
+        function ejecutarAccion(texto) {
+            document.getElementById('userInput').value = texto;
+            procesarMensaje();
+        }
+
+        function limpiarChat() {
+            detenerVoz();
+            const container = document.getElementById('chatContainer');
+            container.innerHTML = '';
+            agregarMensaje('Listo, borré la conversación anterior. ¿En qué te ayudo ahora? 😊', 'ai');
+        }
+
+        // Escapa HTML para evitar inyección de código desde el texto del usuario
+        function escaparHTML(texto) {
+            const div = document.createElement('div');
+            div.textContent = texto;
+            return div.innerHTML;
+        }
+
+        function agregarMensaje(texto, tipo, esHTML = false) {
+            const container = document.getElementById('chatContainer');
+            const wrapper = document.createElement('div');
+            wrapper.className = `message-wrapper ${tipo}`;
+
+            const msgDiv = document.createElement('div');
+            msgDiv.className = `message ${tipo}`;
+            // Los mensajes del usuario siempre se escapan; los de la IA solo llevan HTML
+            // cuando la propia función lo generó explícitamente (esHTML = true).
+            msgDiv.innerHTML = esHTML ? texto : escaparHTML(texto);
+            wrapper.appendChild(msgDiv);
+
+            if (tipo === 'ai') {
+                const actions = document.createElement('div');
+                actions.className = 'msg-actions';
+
+                const audioBtn = document.createElement('button');
+                audioBtn.className = 'speak-msg-btn';
+                audioBtn.innerHTML = '🔊 Escuchar';
+                audioBtn.onclick = function() { hablarTexto(this); };
+                actions.appendChild(audioBtn);
+
+                const stopBtn = document.createElement('button');
+                stopBtn.className = 'stop-msg-btn';
+                stopBtn.innerHTML = '⏹️ Detener';
+                stopBtn.onclick = detenerVoz;
+                actions.appendChild(stopBtn);
+
+                wrapper.appendChild(actions);
+            }
+
+            container.appendChild(wrapper);
+            container.scrollTop = container.scrollHeight;
+            return wrapper;
+        }
+
+        function mostrarEscribiendo() {
+            const container = document.getElementById('chatContainer');
+            const wrapper = document.createElement('div');
+            wrapper.className = 'message-wrapper ai';
+            wrapper.id = 'typingIndicator';
+            wrapper.innerHTML = `<div class="message ai"><div class="typing-dots"><span></span><span></span><span></span></div></div>`;
+            container.appendChild(wrapper);
+            container.scrollTop = container.scrollHeight;
+        }
+
+        function quitarEscribiendo() {
+            const el = document.getElementById('typingIndicator');
+            if (el) el.remove();
+        }
+
+        // Evaluador de matemáticas seguro: solo permite dígitos, punto y los operadores básicos.
+        // Evita el uso de eval() sobre texto arbitrario del usuario.
+        function calcularSeguro(expresion) {
+            const limpio = expresion.trim();
+            if (!limpio) throw new Error('Expresión vacía');
+            if (!/^[0-9+\-*/().\s%]+$/.test(limpio)) {
+                throw new Error('Caracteres no permitidos');
+            }
+            // new Function en un sandbox restringido solo a aritmética validada arriba
+            const resultado = Function('"use strict"; return (' + limpio + ')')();
+            if (typeof resultado !== 'number' || !isFinite(resultado)) {
+                throw new Error('Resultado inválido');
+            }
+            return resultado;
+        }
+
+        function procesarMensaje() {
+            if (procesando) return;
+            const input = document.getElementById('userInput');
+            let texto = input.value.trim();
+            if (!texto) return;
+
+            agregarMensaje(texto, 'user');
+            input.value = '';
+            procesando = true;
+            document.getElementById('sendBtn').disabled = true;
+
+            let textoMinus = texto.toLowerCase();
+
+            if (textoMinus.startsWith('hey pack')) {
+                textoMinus = textoMinus.replace('hey pack', '').trim();
+            }
+
+            mostrarEscribiendo();
+
+            // Pequeña pausa simulada para que la respuesta se sienta natural, sin bloquear la UI
+            setTimeout(() => {
+                quitarEscribiendo();
+
+                let respuestaIA = "";
+                let respuestaEsHTML = false;
+
+                if (textoMinus.includes('ayuda') || textoMinus === '?') {
+                    respuestaIA = "Esto es lo que sé hacer: decirte la <b>hora</b> o la <b>fecha</b>, abrir <b>YouTube</b>, <b>Spotify</b> o juegos web, resolver operaciones con <b>mate: [operación]</b>, contarte un <b>chiste</b>, y platicar contigo en distintos modos (Amigable, Mate, Experta, Omni, Meme). ¡Pruébame! 😊";
+                    respuestaEsHTML = true;
+                }
+                else if (textoMinus.includes('hora')) {
+                    const ahora = new Date();
+                    respuestaIA = `¡Claro! En este momento son las ${ahora.toLocaleTimeString('es-ES')}.`;
+                }
+                else if (textoMinus.includes('fecha') || textoMinus.includes('qué día es')) {
+                    const ahora = new Date();
+                    respuestaIA = `Hoy es ${ahora.toLocaleDateString('es-ES', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}.`;
+                }
+                else if (textoMinus.includes('abrir youtube')) {
+                    respuestaIA = "¡Perfecto! Te abro YouTube en un instante para que disfrutes de tus videos. 📺";
+                    window.open('https://youtube.com', '_blank');
+                }
+                else if (textoMinus.includes('abrir spotify')) {
+                    respuestaIA = "¡Entendido! Abriendo Spotify para que le des play a tu música. 🎧";
+                    window.open('https://open.spotify.com', '_blank');
+                }
+                else if (textoMinus.includes('abrir geometría dash') || textoMinus.includes('abrir gd')) {
+                    respuestaIA = "¡Excelente elección! Abriendo los juegos web para pasar un buen rato. 🎮";
+                    window.open('https://poki.com/es/g/geometry-dash', '_blank');
+                }
+                else if (textoMinus.startsWith('mate:') || textoMinus.startsWith('mate ') || textoMinus === 'mate') {
+                    let operacion = textoMinus.replace('mate:', '').replace('mate', '').trim();
+                    if (!operacion) {
+                        respuestaIA = "¡Modo Mate! Dime una operación así: <b>mate: 45*12+8</b> y la resolvemos. 🧮";
+                        respuestaEsHTML = true;
+                    } else {
+                        try {
+                            const resultado = calcularSeguro(operacion);
+                            respuestaIA = `¡Listo! El resultado de resolver <b>${escaparHTML(operacion)}</b> es <b>${resultado}</b>. 🧮✨`;
+                            respuestaEsHTML = true;
+                        } catch (err) {
+                            respuestaIA = "Ay, tuve un pequeño desliz calculando eso. ¿Podrías revisar los números porfis? Solo puedo usar + − × ÷ y paréntesis.";
+                        }
+                    }
+                }
+                else if (textoMinus.includes('mem reduct')) {
+                    respuestaIA = "<b>Mem Reduct</b> es una herramienta súper útil y ligera para Windows que te ayuda a liberar memoria RAM y mantener tu compu al máximo rendimiento. ¡Te la recomiendo mucho!";
+                    respuestaEsHTML = true;
+                }
+                else if (textoMinus.includes('chiste')) {
+                    respuestaIA = CHISTES[Math.floor(Math.random() * CHISTES.length)];
+                }
+                else if (textoMinus.includes('quién eres') || textoMinus.includes('quien eres')) {
+                    respuestaIA = "Soy <b>EZPack AI</b>, tu asistente ligero que corre directo en el navegador: sin servidores ni configuraciones complicadas. 📦";
+                    respuestaEsHTML = true;
+                }
+                else if (textoMinus.includes('gracias')) {
+                    respuestaIA = "¡Con mucho gusto! Aquí ando para lo que necesites. 😊";
+                }
+                else if (/^(hola|buenas|hey)\b/.test(textoMinus)) {
+                    respuestaIA = "¡Hola! Qué bueno tenerte por aquí. ¿En qué te ayudo hoy?";
+                }
+                else {
+                    if (modoActual === 'Mate') {
+                        respuestaIA = "¡Modo Mate activado! Escribe una operación usando 'mate: [operación]' y con gusto la resolvemos juntos.";
+                    } else if (modoActual === 'Meme') {
+                        respuestaIA = "¡Claro que sí, crack! Aquí andamos al 100 y listos para lo que se ofrezca Bv 😎📦";
+                    } else if (modoActual === 'Experta') {
+                        respuestaIA = `He analizado tu consulta: "${escaparHTML(texto)}". Con la información disponible localmente no tengo una respuesta específica, pero puedo ayudarte con hora, fecha, cálculos, abrir apps o resolver dudas puntuales.`;
+                        respuestaEsHTML = true;
+                    } else if (modoActual === 'Omni') {
+                        respuestaIA = `Tomando en cuenta todo el contexto: dime si necesitas la hora, la fecha, un cálculo, abrir algo o simplemente platicar sobre "${escaparHTML(texto)}". Aquí estoy para lo que sea. 🌐`;
+                        respuestaEsHTML = true;
+                    } else {
+                        respuestaIA = `¡Qué interesante lo que comentas sobre "${escaparHTML(texto)}"! Me encanta ayudarte en todo lo que necesites desde casa. ¿Qué más hacemos? 😊`;
+                        respuestaEsHTML = true;
+                    }
+                }
+
+                agregarMensaje(respuestaIA, 'ai', respuestaEsHTML);
+
+                let textoLimpio = respuestaIA.replace(/<[^>]*>?/gm, '');
+                hablar(textoLimpio);
+
+                procesando = false;
+                document.getElementById('sendBtn').disabled = false;
+                document.getElementById('userInput').focus();
+            }, 450);
+        }
+    </script>
+</body>
+</html>
