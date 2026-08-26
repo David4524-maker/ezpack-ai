@@ -1,0 +1,783 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>🖼️ EZPack AI PICTURES</title>
+  <style>
+    :root {
+      --bg-main: #080a0e;
+      --bg-panel: #0f131d;
+      --bg-card: #171c2b;
+      --accent-pic: #ff2a6d;
+      --accent-vid: #00f5ff;
+      --accent-aud: #b537f2;
+      --accent-mc: #55ff55;
+      --text: #e1e6f0;
+      --text-dim: #707d96;
+      --border: #202738;
+      --font-code: 'Courier New', Courier, monospace;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: var(--bg-main);
+      color: var(--text);
+      font-family: system-ui, -apple-system, sans-serif;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    header {
+      background: var(--bg-panel);
+      border-bottom: 1px solid var(--border);
+      padding: 10px 18px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .brand {
+      font-weight: 800;
+      font-size: 1.1rem;
+      color: var(--accent-pic);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .badge {
+      background: rgba(0, 245, 255, 0.1);
+      color: var(--accent-vid);
+      border: 1px solid var(--accent-vid);
+      font-size: 0.68rem;
+      padding: 2px 8px;
+      border-radius: 10px;
+    }
+
+    .top-btns { display: flex; gap: 8px; }
+    .btn {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      color: var(--text);
+      padding: 6px 12px;
+      border-radius: 6px;
+      font-size: 0.8rem;
+      cursor: pointer;
+      transition: 0.2s;
+    }
+    .btn:hover { border-color: var(--accent-pic); color: var(--accent-pic); }
+
+    .layout {
+      display: grid;
+      grid-template-columns: 310px 1fr;
+      flex: 1;
+      min-height: 0;
+    }
+
+    aside {
+      background: var(--bg-panel);
+      border-right: 1px solid var(--border);
+      padding: 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      overflow-y: auto;
+    }
+    .title-sub {
+      font-size: 0.7rem;
+      color: var(--text-dim);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      font-weight: 700;
+      margin-top: 4px;
+    }
+    .mode-group { display: flex; flex-direction: column; gap: 4px; }
+    .mode-btn {
+      background: transparent;
+      border: 1px solid transparent;
+      color: var(--text);
+      padding: 8px 10px;
+      border-radius: 6px;
+      text-align: left;
+      font-size: 0.82rem;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .mode-btn.active {
+      background: var(--bg-card);
+      border-color: var(--accent-pic);
+      color: var(--accent-pic);
+      font-weight: bold;
+    }
+
+    .presets-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 5px;
+    }
+    .preset-btn {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      color: var(--text-dim);
+      padding: 6px 5px;
+      border-radius: 4px;
+      font-size: 0.7rem;
+      cursor: pointer;
+      text-align: center;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .preset-btn:hover { color: var(--text); border-color: var(--accent-vid); }
+
+    .workspace {
+      display: flex;
+      flex-direction: column;
+      background: var(--bg-main);
+      height: 100%;
+      min-height: 0;
+    }
+    .chat-box {
+      flex: 1;
+      padding: 18px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .msg { display: flex; flex-direction: column; gap: 6px; max-width: 90%; }
+    .msg.user { align-self: flex-end; }
+    .msg.ai { align-self: flex-start; width: 100%; max-width: 96%; }
+
+    .bubble {
+      padding: 12px 16px;
+      border-radius: 8px;
+      font-size: 0.88rem;
+      line-height: 1.5;
+    }
+    .user .bubble { background: var(--accent-pic); color: #fff; }
+    .ai .bubble { background: var(--bg-panel); border: 1px solid var(--border); }
+
+    .media-block {
+      background: #050608;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      margin-top: 10px;
+      overflow: hidden;
+    }
+    .media-header {
+      background: var(--bg-card);
+      padding: 6px 12px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 0.75rem;
+      color: var(--text-dim);
+      border-bottom: 1px solid var(--border);
+    }
+    .media-actions { display: flex; gap: 6px; }
+    .media-body {
+      padding: 12px;
+      font-family: var(--font-code);
+      font-size: 0.8rem;
+      color: var(--accent-vid);
+      max-height: 320px;
+      overflow-y: auto;
+      white-space: pre-wrap;
+    }
+
+    .input-box {
+      padding: 12px;
+      background: var(--bg-panel);
+      border-top: 1px solid var(--border);
+      display: flex;
+      gap: 10px;
+    }
+    textarea {
+      flex: 1;
+      background: var(--bg-main);
+      border: 1px solid var(--border);
+      color: var(--text);
+      padding: 10px;
+      border-radius: 6px;
+      resize: none;
+      height: 48px;
+      outline: none;
+      font-size: 0.88rem;
+    }
+    textarea:focus { border-color: var(--accent-pic); }
+
+    .send-btn {
+      background: var(--accent-pic);
+      color: #fff;
+      border: none;
+      padding: 0 20px;
+      border-radius: 6px;
+      font-weight: bold;
+      cursor: pointer;
+    }
+
+    .modal {
+      display: none;
+      position: fixed;
+      top: 2%; left: 2%; width: 96%; height: 96%;
+      background: rgba(0,0,0,0.95);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      z-index: 999;
+      flex-direction: column;
+    }
+    .modal-header {
+      background: var(--bg-panel);
+      padding: 8px 16px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid var(--border);
+    }
+    iframe { width: 100%; height: 100%; border: none; }
+  </style>
+</head>
+<body>
+
+  <header>
+    <div class="brand">
+      🖼️ EZPack AI PICTURES <span class="badge">Universal Studio 3.0</span>
+    </div>
+    <div class="top-btns">
+      <button class="btn" onclick="clearWorkspace()">🗑️ Limpiar</button>
+      <button class="btn" onclick="exportSession()">📥 Exportar .md</button>
+    </div>
+  </header>
+
+  <div class="layout">
+    <aside>
+      <span class="title-sub">Modo Principal</span>
+      <div class="mode-group">
+        <button class="mode-btn active" onclick="selectMode('img', this)">🎨 Generador Arte Procedural</button>
+        <button class="mode-btn" onclick="selectMode('vid', this)">🎬 Motion Video 60FPS</button>
+        <button class="mode-btn" onclick="selectMode('aud', this)">🎵 Sintetizador Audio / SFX</button>
+      </div>
+
+      <span class="title-sub">Minecraft Presets</span>
+      <div class="presets-grid">
+        <button class="preset-btn" onclick="runPreset('Minecraft Block World Arte')">⛏️ Arte Bloques</button>
+        <button class="preset-btn" onclick="runPreset('Minecraft Motion Camera Video')">🎬 Minecraft 3D</button>
+        <button class="preset-btn" onclick="runPreset('Minecraft Retro Theme Music')">🎼 Musica Chiptune</button>
+        <button class="preset-btn" onclick="runPreset('Minecraft Block Break Sound')">🔊 Sonido Bloque</button>
+      </div>
+
+      <span class="title-sub">Sistemas & Virtualización</span>
+      <div class="presets-grid">
+        <button class="preset-btn" onclick="runPreset('Windows Desktop Concept')">🪟 Windows</button>
+        <button class="preset-btn" onclick="runPreset('macOS Glass Concept')">🍎 macOS</button>
+        <button class="preset-btn" onclick="runPreset('Linux Terminal Shell')">🐧 Linux Terminal</button>
+        <button class="preset-btn" onclick="runPreset('VirtualBox VM Environment')">📦 VirtualBox</button>
+      </div>
+
+      <span class="title-sub">Sonidos de Sistema & Teclado</span>
+      <div class="presets-grid">
+        <button class="preset-btn" onclick="runPreset('Sonido Teclado Mecanico Switch')">⌨️ Teclado Click</button>
+        <button class="preset-btn" onclick="runPreset('Tono de Llamada Phone Ring')">📞 Llamada Ring</button>
+        <button class="preset-btn" onclick="runPreset('Efecto Advertencia Warning')">⚠️ Advertencia</button>
+        <button class="preset-btn" onclick="runPreset('Efecto Sonido ERROR Alert')">❌ ERROR</button>
+        <button class="preset-btn" onclick="runPreset('Efecto Sonido Pregunta Query')">❓ Pregunta</button>
+        <button class="preset-btn" onclick="runPreset('Efecto Sonido Info Chime')">ℹ️ Info Chime</button>
+      </div>
+
+      <span class="title-sub">Arte Sci-Fi & Música</span>
+      <div class="presets-grid">
+        <button class="preset-btn" onclick="runPreset('Sol Retro Synthwave')">🌅 Sol Retro</button>
+        <button class="preset-btn" onclick="runPreset('Nebulosa Cosmica Space')">🌌 Nebulosa</button>
+        <button class="preset-btn" onclick="runPreset('Cyber Grid Matrix')">🌐 Cyber Grid</button>
+        <button class="preset-btn" onclick="runPreset('Tunel 3D SciFi Motion')">🚀 Tunel 3D</button>
+        <button class="preset-btn" onclick="runPreset('Lofi Chill Beats')">🎧 Lofi Chill</button>
+        <button class="preset-btn" onclick="runPreset('Synth Arp 80s Sequence')">🎹 Synth Arp</button>
+      </div>
+    </aside>
+
+    <main class="workspace">
+      <div class="chat-box" id="chatBox">
+        <div class="msg ai">
+          <div class="bubble">
+            ¡Sistema listo! Genera imágenes, animaciones y audio sintetizado de <strong>Minecraft, Teclados, Sistemas Operativos, VirtualBox, Efectos de Sistema (Error, Advertencia, Info) y Música</strong>. Cada generación usa semillas únicas.
+          </div>
+        </div>
+      </div>
+
+      <div class="input-box">
+        <textarea id="promptInput" placeholder="Escribe un prompt (ej. 'Efecto ERROR', 'Minecraft Video', 'Teclado Mecanico', 'Linux Terminal', 'Sol Retro')..." onkeydown="onEnterKey(event)"></textarea>
+        <button class="send-btn" onclick="processPrompt()">Generar</button>
+      </div>
+    </main>
+  </div>
+
+  <div class="modal" id="previewModal">
+    <div class="modal-header">
+      <span style="font-size:0.85rem; font-weight:bold; color:var(--accent-vid);">EZMediaEngine Universal Player</span>
+      <button class="btn" onclick="closeModal()">Cerrar [X]</button>
+    </div>
+    <iframe id="previewFrame"></iframe>
+  </div>
+
+  <script>
+    let activeMode = 'img';
+    let blockCount = 0;
+    let historyData = [];
+
+    function selectMode(mode, btn) {
+      activeMode = mode;
+      document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+    }
+
+    function runPreset(text) {
+      document.getElementById('promptInput').value = text;
+      processPrompt();
+    }
+
+    function onEnterKey(e) {
+      if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        processPrompt();
+      }
+    }
+
+    function processPrompt() {
+      const input = document.getElementById('promptInput');
+      const text = input.value.trim();
+      if (!text) return;
+
+      appendMessage('user', text);
+      input.value = '';
+
+      setTimeout(() => {
+        const generatedCode = EZEngineUniversal.synthesize(text, activeMode);
+        historyData.push({ prompt: text, code: generatedCode });
+        appendAiResponse(text, generatedCode);
+      }, 150);
+    }
+
+    function appendMessage(sender, text) {
+      const chatBox = document.getElementById('chatBox');
+      const msg = document.createElement('div');
+      msg.className = `msg ${sender}`;
+      msg.innerHTML = `<div class="bubble">${escapeHtml(text)}</div>`;
+      chatBox.appendChild(msg);
+      chatBox.scrollTop = chatBox.scrollHeight;
+    }
+
+    function appendAiResponse(promptText, code) {
+      const chatBox = document.getElementById('chatBox');
+      const msg = document.createElement('div');
+      msg.className = 'msg ai';
+      
+      blockCount++;
+      const blockId = `code-block-${blockCount}`;
+
+      msg.innerHTML = `
+        <div class="bubble">
+          Sintetización ejecutable para: <strong>${escapeHtml(promptText)}</strong>
+          <div class="media-block">
+            <div class="media-header">
+              <span>PROCEDURAL HTML5 CANVAS / WEB AUDIO API</span>
+              <div class="media-actions">
+                <button class="btn" onclick="launchLive('${blockId}')">▶ Run Live Player</button>
+                <button class="btn" onclick="copySnippet('${blockId}')">📋 Copiar</button>
+              </div>
+            </div>
+            <div class="media-body" id="${blockId}">${escapeHtml(code)}</div>
+          </div>
+        </div>
+      `;
+      chatBox.appendChild(msg);
+      chatBox.scrollTop = chatBox.scrollHeight;
+    }
+
+    /* --- MOTOR PROCEDURAL EZENGINE UNIVERSAL --- */
+    const EZEngineUniversal = {
+      getHash(str) {
+        let hash = 0;
+        for (let i = 0; i < str.length; i++) {
+          hash = (hash << 5) - hash + str.charCodeAt(i);
+          hash |= 0;
+        }
+        return Math.abs(hash);
+      },
+
+      synthesize(prompt, mode) {
+        const p = prompt.toLowerCase();
+        const seed = this.getHash(prompt);
+
+        // Routing de Audio / SFX
+        if (p.includes('teclado') || p.includes('error') || p.includes('advertencia') || p.includes('pregunta') || p.includes('info') || p.includes('llamada') || p.includes('lofi') || p.includes('synth') || p.includes('musica') || mode === 'aud') {
+          return this.buildAudioCode(prompt, p, seed);
+        }
+        // Routing de Videos / Motion 60FPS
+        if (p.includes('video') || p.includes('tunel') || p.includes('motion') || mode === 'vid') {
+          return this.buildVideoCode(prompt, p, seed);
+        }
+        // Visuales / Canvas Img
+        return this.buildImageCode(prompt, p, seed);
+      },
+
+      buildImageCode(prompt, p, seed) {
+        let canvasScript = '';
+
+        if (p.includes('minecraft')) {
+          canvasScript = `
+            // Minecraft Block Generator
+            const colors = ['#5b8c31', '#866043', '#4a3828', '#3c3c3c', '#48b5c4'];
+            const sz = 32;
+            for(let x=0; x<520; x+=sz) {
+              for(let y=0; y<340; y+=sz) {
+                let c = (y < 96) ? '#6293cc' : (y === 96) ? colors[0] : colors[1];
+                if(y > 220 && Math.random() > 0.6) c = colors[3]; // mineral
+                if(y > 260 && Math.random() > 0.8) c = colors[4]; // diamante
+                ctx.fillStyle = c;
+                ctx.fillRect(x,y,sz,sz);
+                ctx.strokeStyle = 'rgba(0,0,0,0.2)';
+                ctx.strokeRect(x,y,sz,sz);
+              }
+            }
+            // Sun Pixel Box
+            ctx.fillStyle = '#fff'; ctx.fillRect(380, 20, 50, 50);
+          `;
+        } else if (p.includes('windows')) {
+          canvasScript = `
+            ctx.fillStyle = '#0078d4'; ctx.fillRect(0,0,520,340);
+            // Windows Logo
+            const colors = ['#f25022', '#7fba00', '#00a4ef', '#ffb900'];
+            let offsets = [[180,110], [265,110], [180,195], [265,195]];
+            offsets.forEach((o, i) => { ctx.fillStyle = colors[i]; ctx.fillRect(o[0], o[1], 75, 75); });
+            ctx.fillStyle = '#ffffff'; ctx.font = '20px sans-serif'; ctx.fillText('Windows 11 OS Environment', 140, 310);
+          `;
+        } else if (p.includes('macos')) {
+          canvasScript = `
+            let g = ctx.createLinearGradient(0,0,520,340);
+            g.addColorStop(0, '#e36414'); g.addColorStop(1, '#9a031e');
+            ctx.fillStyle = g; ctx.fillRect(0,0,520,340);
+            // Top Bar
+            ctx.fillStyle = 'rgba(255,255,255,0.2)'; ctx.fillRect(0,0,520,24);
+            ctx.fillStyle = '#ff5f56'; ctx.beginPath(); ctx.arc(15,12,5,0,Math.PI*2); ctx.fill();
+            ctx.fillStyle = '#ffbd2e'; ctx.beginPath(); ctx.arc(30,12,5,0,Math.PI*2); ctx.fill();
+            ctx.fillStyle = '#27c93f'; ctx.beginPath(); ctx.arc(45,12,5,0,Math.PI*2); ctx.fill();
+            // Dock
+            ctx.fillStyle = 'rgba(255,255,255,0.25)'; ctx.roundRect(140, 285, 240, 45, 12); ctx.fill();
+          `;
+        } else if (p.includes('linux')) {
+          canvasScript = `
+            ctx.fillStyle = '#0c0c0c'; ctx.fillRect(0,0,520,340);
+            ctx.fillStyle = '#00ff66'; ctx.font = '14px monospace';
+            ctx.fillText('user@ezpack-linux:~$ uname -a', 20, 40);
+            ctx.fillText('Linux ezpack-kernel 6.10.0 #1 SMP PREEMPT_DYNAMIC x86_64', 20, 65);
+            ctx.fillText('user@ezpack-linux:~$ ./generate_art.sh --seed=${seed}', 20, 95);
+            ctx.fillStyle = '#33ffff';
+            ctx.fillText('[OK] System Procedural Modules Loaded Successfully.', 20, 125);
+            ctx.fillStyle = '#00ff66'; ctx.fillText('user@ezpack-linux:~$ _', 20, 160);
+          `;
+        } else if (p.includes('virtualbox')) {
+          canvasScript = `
+            ctx.fillStyle = '#1e2430'; ctx.fillRect(0,0,520,340);
+            ctx.fillStyle = '#2b3245'; ctx.fillRect(20,20,480,300);
+            ctx.strokeStyle = '#00a4ef'; ctx.lineWidth = 2; ctx.strokeRect(20,20,480,300);
+            ctx.fillStyle = '#00a4ef'; ctx.fillRect(20,20,480,26);
+            ctx.fillStyle = '#fff'; ctx.font = 'bold 12px sans-serif'; ctx.fillText('Oracle VM VirtualBox - Running Virtual Machine', 30, 37);
+            ctx.fillStyle = '#000'; ctx.fillRect(35,60,450,240);
+            ctx.fillStyle = '#00ff00'; ctx.font = '12px monospace'; ctx.fillText('VirtualBox Booting Guest OS...', 50, 100);
+          `;
+        } else if (p.includes('nebulosa')) {
+          canvasScript = `
+            ctx.fillStyle = '#030208'; ctx.fillRect(0,0,520,340);
+            for(let i=0; i<80; i++) {
+              let x = Math.random()*520, y = Math.random()*340, r = Math.random()*40 + 5;
+              let g = ctx.createRadialGradient(x,y,0, x,y,r);
+              g.addColorStop(0, 'rgba(181, 55, 242, 0.4)');
+              g.addColorStop(1, 'transparent');
+              ctx.fillStyle = g; ctx.beginPath(); ctx.arc(x,y,r,0,Math.PI*2); ctx.fill();
+            }
+          `;
+        } else {
+          // Sol Retro / Default
+          canvasScript = `
+            let g = ctx.createLinearGradient(0,0,0,340);
+            g.addColorStop(0, '#1a0033'); g.addColorStop(0.6, '#ff0055'); g.addColorStop(1, '#ffbe0b');
+            ctx.fillStyle = g; ctx.fillRect(0,0,520,340);
+            // Sun
+            ctx.fillStyle = '#ffbe0b'; ctx.beginPath(); ctx.arc(260, 170, 65, 0, Math.PI*2); ctx.fill();
+            // Grid Lines
+            ctx.strokeStyle = '#00f5ff'; ctx.lineWidth = 1.5;
+            for(let y=170; y<340; y+=12) { ctx.beginPath(); ctx.moveTo(0,y); ctx.lineTo(520,y); ctx.stroke(); }
+          `;
+        }
+
+        return `<!DOCTYPE html>
+<html>
+<head>
+  <style>
+    body { margin:0; background:#080a0e; display:flex; flex-direction:column; align-items:center; justify-content:center; min-height:100vh; color:#fff; font-family:sans-serif; }
+    canvas { border:2px solid #ff2a6d; border-radius:10px; box-shadow:0 0 20px #ff2a6d55; }
+  </style>
+</head>
+<body>
+  <h3>🎨 Canvas Art: ${prompt}</h3>
+  <canvas id="cv" width="520" height="340"></canvas>
+  <script>
+    const cv = document.getElementById('cv');
+    const ctx = cv.getContext('2d');
+    ${canvasScript}
+  <\/script>
+</body>
+</html>`;
+      },
+
+      buildVideoCode(prompt, p, seed) {
+        let motionScript = '';
+
+        if (p.includes('minecraft')) {
+          motionScript = `
+            // Minecraft 3D voxel motion camera simulation
+            t += 0.04;
+            ctx.fillStyle = '#6293cc'; ctx.fillRect(0,0,520,320);
+            for(let x=0; x<16; x++) {
+              for(let z=1; z<10; z++) {
+                let px = (x - 8) * (200 / z) + 260 + Math.sin(t)*30;
+                let py = 160 + (100 / z) + Math.cos(t + x)*10;
+                let sz = 160 / z;
+                ctx.fillStyle = (x+z)%2===0 ? '#55aa55' : '#77aa33';
+                ctx.fillRect(px, py, sz, sz);
+                ctx.strokeStyle = '#336622'; ctx.strokeRect(px, py, sz, sz);
+              }
+            }
+          `;
+        } else if (p.includes('grid')) {
+          motionScript = `
+            t += 0.05;
+            ctx.fillStyle = '#05050a'; ctx.fillRect(0,0,520,320);
+            ctx.strokeStyle = '#00f5ff'; ctx.lineWidth = 1.5;
+            let offset = (t * 30) % 20;
+            for(let y=160 + offset; y<320; y+=20) { ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(520, y); ctx.stroke(); }
+            for(let x=-200; x<720; x+=40) { ctx.beginPath(); ctx.moveTo(260, 160); ctx.lineTo(x, 320); ctx.stroke(); }
+          `;
+        } else {
+          // Tunnel 3D Motion
+          motionScript = `
+            t += 0.04;
+            ctx.fillStyle = 'rgba(0,0,0,0.2)'; ctx.fillRect(0,0,520,320);
+            for(let i=1; i<=10; i++) {
+              let r = ((t*50 + i*30) % 250);
+              ctx.strokeStyle = i%2===0 ? '#ff2a6d' : '#00f5ff';
+              ctx.lineWidth = 3;
+              ctx.beginPath();
+              ctx.arc(260, 160, r, 0, Math.PI*2);
+              ctx.stroke();
+            }
+          `;
+        }
+
+        return `<!DOCTYPE html>
+<html>
+<head>
+  <style>
+    body { margin:0; background:#000; display:flex; flex-direction:column; align-items:center; justify-content:center; min-height:100vh; color:#00f5ff; font-family:monospace; }
+    canvas { border:2px solid #00f5ff; border-radius:10px; box-shadow:0 0 25px #00f5ff66; }
+  </style>
+</head>
+<body>
+  <h3>🎬 Motion 60FPS: ${prompt}</h3>
+  <canvas id="vcv" width="520" height="320"></canvas>
+  <script>
+    const cv = document.getElementById('vcv');
+    const ctx = cv.getContext('2d');
+    let t = 0;
+    function render() {
+      ${motionScript}
+      requestAnimationFrame(render);
+    }
+    render();
+  <\/script>
+</body>
+</html>`;
+      },
+
+      buildAudioCode(prompt, p, seed) {
+        let soundLogic = '';
+        let labelDesc = '';
+
+        if (p.includes('teclado')) {
+          labelDesc = 'Click de Switch Mecánico (Tactile Blue/Red)';
+          soundLogic = `
+            // Noise Burst + Metallic Click
+            let bufSize = actx.sampleRate * 0.05;
+            let buffer = actx.createBuffer(1, bufSize, actx.sampleRate);
+            let data = buffer.getChannelData(0);
+            for (let i = 0; i < bufSize; i++) data[i] = Math.random() * 2 - 1;
+
+            let noise = actx.createBufferSource();
+            noise.buffer = buffer;
+            let filter = actx.createBiquadFilter();
+            filter.type = 'highpass'; filter.frequency.value = 1000;
+            let gain = actx.createGain();
+            gain.gain.setValueAtTime(0.4, actx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.001, actx.currentTime + 0.04);
+
+            noise.connect(filter); filter.connect(gain); gain.connect(actx.destination);
+            noise.start();
+          `;
+        } else if (p.includes('error')) {
+          labelDesc = 'Tono de Alerta ERROR del Sistema';
+          soundLogic = `
+            let osc1 = actx.createOscillator(), osc2 = actx.createOscillator();
+            let gain = actx.createGain();
+            osc1.type = 'sawtooth'; osc2.type = 'sawtooth';
+            osc1.frequency.value = 140; osc2.frequency.value = 148; // Disonancia
+            gain.gain.setValueAtTime(0.3, actx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.001, actx.currentTime + 0.35);
+            osc1.connect(gain); osc2.connect(gain); gain.connect(actx.destination);
+            osc1.start(); osc2.start(); osc1.stop(actx.currentTime + 0.35); osc2.stop(actx.currentTime + 0.35);
+          `;
+        } else if (p.includes('advertencia') || p.includes('warning')) {
+          labelDesc = 'Tono de Advertencia (Triple Beep)';
+          soundLogic = `
+            [0, 0.12, 0.24].forEach(t => {
+              let osc = actx.createOscillator();
+              let gain = actx.createGain();
+              osc.type = 'square'; osc.frequency.value = 880;
+              gain.gain.setValueAtTime(0.2, actx.currentTime + t);
+              gain.gain.exponentialRampToValueAtTime(0.001, actx.currentTime + t + 0.08);
+              osc.connect(gain); gain.connect(actx.destination);
+              osc.start(actx.currentTime + t); osc.stop(actx.currentTime + t + 0.08);
+            });
+          `;
+        } else if (p.includes('pregunta')) {
+          labelDesc = 'Efecto de Sonido Pregunta (Pitch Ramp)';
+          soundLogic = `
+            let osc = actx.createOscillator(); let gain = actx.createGain();
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(300, actx.currentTime);
+            osc.frequency.exponentialRampToValueAtTime(700, actx.currentTime + 0.25);
+            gain.gain.setValueAtTime(0.25, actx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.001, actx.currentTime + 0.28);
+            osc.connect(gain); gain.connect(actx.destination);
+            osc.start(); osc.stop(actx.currentTime + 0.28);
+          `;
+        } else if (p.includes('info')) {
+          labelDesc = 'Chime de Notificación e Información';
+          soundLogic = `
+            [523.25, 659.25].forEach((freq, idx) => {
+              let osc = actx.createOscillator(); let gain = actx.createGain();
+              osc.type = 'sine'; osc.frequency.value = freq;
+              let t = actx.currentTime + idx * 0.1;
+              gain.gain.setValueAtTime(0.2, t);
+              gain.gain.exponentialRampToValueAtTime(0.001, t + 0.4);
+              osc.connect(gain); gain.connect(actx.destination);
+              osc.start(t); osc.stop(t + 0.4);
+            });
+          `;
+        } else if (p.includes('llamada')) {
+          labelDesc = 'Tono de Llamada Retro Phone';
+          soundLogic = `
+            for(let i=0; i<4; i++) {
+              let osc1 = actx.createOscillator(), osc2 = actx.createOscillator();
+              let gain = actx.createGain();
+              osc1.frequency.value = 440; osc2.frequency.value = 480;
+              let t = actx.currentTime + i * 0.25;
+              gain.gain.setValueAtTime(0.15, t); gain.gain.exponentialRampToValueAtTime(0.001, t + 0.18);
+              osc1.connect(gain); osc2.connect(gain); gain.connect(actx.destination);
+              osc1.start(t); osc2.start(t); osc1.stop(t + 0.18); osc2.stop(t + 0.18);
+            }
+          `;
+        } else if (p.includes('minecraft')) {
+          labelDesc = 'Música Chiptune Secuencia Minecraft 8-Bit';
+          soundLogic = `
+            const notes = [261.63, 329.63, 392.00, 523.25, 392.00, 329.63];
+            notes.forEach((f, i) => {
+              let osc = actx.createOscillator(); let gain = actx.createGain();
+              osc.type = 'triangle'; osc.frequency.value = f;
+              let t = actx.currentTime + i * 0.3;
+              gain.gain.setValueAtTime(0.2, t); gain.gain.exponentialRampToValueAtTime(0.001, t + 0.28);
+              osc.connect(gain); gain.connect(actx.destination);
+              osc.start(t); osc.stop(t + 0.28);
+            });
+          `;
+        } else {
+          // Lofi / Synth Arp / General Music
+          labelDesc = 'Secuencia Arpegiadora Sintetizada';
+          soundLogic = `
+            const scale = [220, 261.63, 293.66, 329.63, 392, 440];
+            for(let step=0; step<8; step++) {
+              let osc = actx.createOscillator(); let gain = actx.createGain();
+              osc.type = 'sawtooth'; osc.frequency.value = scale[step % scale.length];
+              let t = actx.currentTime + step * 0.2;
+              gain.gain.setValueAtTime(0.15, t); gain.gain.exponentialRampToValueAtTime(0.001, t + 0.25);
+              osc.connect(gain); gain.connect(actx.destination);
+              osc.start(t); osc.stop(t + 0.25);
+            }
+          `;
+        }
+
+        return `<!DOCTYPE html>
+<html>
+<head>
+  <style>
+    body { margin:0; background:#080a0e; display:flex; flex-direction:column; align-items:center; justify-content:center; min-height:100vh; color:#fff; font-family:sans-serif; }
+    .card { background:#0f131d; border:2px solid #b537f2; border-radius:12px; padding:28px; text-align:center; box-shadow:0 0 25px #b537f255; }
+    button { background:#b537f2; border:none; color:#fff; padding:12px 24px; border-radius:6px; font-weight:bold; cursor:pointer; font-size:15px; margin-top:15px; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h2>🔊 Universal Audio Engine</h2>
+    <p>Preset: <b>${prompt}</b></p>
+    <p style="color:#00f5ff; font-size:13px; margin-top:6px;">${labelDesc}</p>
+    <button onclick="playAudio()">▶ Reproducir Sonido / Secuencia</button>
+  </div>
+  <script>
+    function playAudio() {
+      const actx = new (window.AudioContext || window.webkitAudioContext)();
+      ${soundLogic}
+    }
+  <\/script>
+</body>
+</html>`;
+      }
+    };
+
+    function launchLive(id) {
+      const code = document.getElementById(id).innerText;
+      const modal = document.getElementById('previewModal');
+      const iframe = document.getElementById('previewFrame');
+      modal.style.display = 'flex';
+      iframe.srcdoc = code;
+    }
+
+    function closeModal() { document.getElementById('previewModal').style.display = 'none'; }
+    function clearWorkspace() { document.getElementById('chatBox').innerHTML = ''; historyData = []; }
+    
+    function copySnippet(id) {
+      navigator.clipboard.writeText(document.getElementById(id).innerText);
+      alert("¡Código copiado al portapapeles!");
+    }
+
+    function exportSession() {
+      let content = "# EZPack AI PICTURES 3.0 - Session Log\n\n";
+      historyData.forEach((item, index) => {
+        content += `## ${index + 1}. Prompt: ${item.prompt}\n\`\`\`html\n${item.code}\n\`\`\`\n\n`;
+      });
+      const blob = new Blob([content], { type: 'text/markdown' });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = 'EZPack_Universal_Session.md';
+      a.click();
+    }
+
+    function escapeHtml(str) {
+      return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+    }
+  </script>
+</body>
+</html>
