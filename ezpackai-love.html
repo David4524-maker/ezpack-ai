@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>EZPack AI LOVE</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: 'Segoe UI', system-ui, -apple-system, BlinkMacSystemFont, Roboto, sans-serif;
+    }
+
+    body {
+      background: #0f0c1b;
+      background: radial-gradient(circle at top right, #2b102f, #0f0c1b);
+      height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      color: #f3e8f4;
+      padding: 10px;
+    }
+
+    .chat-card {
+      width: 100%;
+      max-width: 480px;
+      height: 92vh;
+      max-height: 700px;
+      background: rgba(255, 255, 255, 0.05);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid rgba(255, 105, 180, 0.25);
+      border-radius: 24px;
+      display: flex;
+      flex-direction: column;
+      box-shadow: 0 16px 40px rgba(0, 0, 0, 0.6), 0 0 25px rgba(255, 105, 180, 0.15);
+      overflow: hidden;
+    }
+
+    .chat-header {
+      padding: 18px 20px;
+      background: rgba(255, 105, 180, 0.1);
+      border-bottom: 1px solid rgba(255, 105, 180, 0.2);
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+
+    .avatar {
+      width: 44px;
+      height: 44px;
+      background: linear-gradient(135deg, #ff4b82, #ff85a2);
+      border-radius: 50%;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      font-size: 22px;
+      box-shadow: 0 0 14px rgba(255, 75, 130, 0.5);
+      flex-shrink: 0;
+    }
+
+    .header-info h2 {
+      font-size: 17px;
+      color: #ffb6c1;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+    }
+
+    .header-info p {
+      font-size: 12px;
+      color: #bfa9c9;
+      margin-top: 2px;
+    }
+
+    .chat-body {
+      flex: 1;
+      padding: 20px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      scroll-behavior: smooth;
+    }
+
+    .message {
+      max-width: 85%;
+      padding: 12px 16px;
+      border-radius: 18px;
+      font-size: 14px;
+      line-height: 1.5;
+      word-wrap: break-word;
+      animation: fadeIn 0.3s ease-out;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .bot-msg {
+      align-self: flex-start;
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      color: #f3e8f4;
+      border-bottom-left-radius: 4px;
+    }
+
+    .user-msg {
+      align-self: flex-end;
+      background: linear-gradient(135deg, #ff4b82, #e03268);
+      color: #ffffff;
+      border-bottom-right-radius: 4px;
+      box-shadow: 0 4px 14px rgba(255, 75, 130, 0.3);
+    }
+
+    .quick-emotions {
+      padding: 10px 14px;
+      display: flex;
+      gap: 8px;
+      overflow-x: auto;
+      background: rgba(0, 0, 0, 0.2);
+      border-top: 1px solid rgba(255, 105, 180, 0.15);
+      scrollbar-width: none;
+    }
+    .quick-emotions::-webkit-scrollbar {
+      display: none;
+    }
+
+    .emotion-btn {
+      background: rgba(255, 105, 180, 0.12);
+      border: 1px solid rgba(255, 105, 180, 0.35);
+      color: #ffb6c1;
+      padding: 7px 14px;
+      border-radius: 20px;
+      font-size: 13px;
+      white-space: nowrap;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      font-weight: 500;
+    }
+
+    .emotion-btn:hover {
+      background: #ff4b82;
+      color: #ffffff;
+      border-color: #ff4b82;
+      transform: translateY(-2px);
+      box-shadow: 0 4px 10px rgba(255, 75, 130, 0.4);
+    }
+
+    .chat-footer {
+      padding: 14px 16px;
+      background: rgba(0, 0, 0, 0.25);
+      border-top: 1px solid rgba(255, 255, 255, 0.05);
+    }
+
+    .input-form {
+      display: flex;
+      gap: 10px;
+      width: 100%;
+    }
+
+    .input-form input {
+      flex: 1;
+      background: rgba(255, 255, 255, 0.07);
+      border: 1px solid rgba(255, 105, 180, 0.25);
+      border-radius: 24px;
+      padding: 12px 18px;
+      color: #ffffff;
+      font-size: 14px;
+      outline: none;
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+
+    .input-form input::placeholder {
+      color: #9a88a8;
+    }
+
+    .input-form input:focus {
+      border-color: #ff4b82;
+      box-shadow: 0 0 10px rgba(255, 75, 130, 0.4);
+    }
+
+    .send-btn {
+      background: linear-gradient(135deg, #ff4b82, #ff85a2);
+      border: none;
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      color: white;
+      font-size: 18px;
+      cursor: pointer;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      transition: transform 0.2s, box-shadow 0.2s;
+      flex-shrink: 0;
+    }
+
+    .send-btn:hover {
+      transform: scale(1.06);
+      box-shadow: 0 0 12px rgba(255, 75, 130, 0.6);
+    }
+  </style>
+</head>
+<body>
+
+  <div class="chat-card">
+    <div class="chat-header">
+      <div class="avatar">💖</div>
+      <div class="header-info">
+        <h2>EZPack AI LOVE</h2>
+        <p>Tu refugio de contención y empatía</p>
+      </div>
+    </div>
+
+    <div class="chat-body" id="chatBody">
+      <div class="message bot-msg">
+        Hola, soy <b>EZPack AI LOVE</b>. Estoy aquí para escucharte y acompañarte sin juzgarte. ¿Cómo te sientes hoy? 🌸
+      </div>
+    </div>
+
+    <div class="quick-emotions">
+      <button type="button" class="emotion-btn" onclick="sendEmotion('Estoy triste')">😢 Triste</button>
+      <button type="button" class="emotion-btn" onclick="sendEmotion('Estoy feliz')">😊 Feliz</button>
+      <button type="button" class="emotion-btn" onclick="sendEmotion('Alguien me dijo fea')">💬 Me dijeron fea</button>
+      <button type="button" class="emotion-btn" onclick="sendEmotion('¿Soy una mala persona?')">❓ ¿Mala persona?</button>
+      <button type="button" class="emotion-btn" onclick="sendEmotion('Te quiero')">💖 Te quiero</button>
+      <button type="button" class="emotion-btn" onclick="sendEmotion('Gracias')">🙏 Gracias</button>
+    </div>
+
+    <div class="chat-footer">
+      <form class="input-form" id="chatForm" onsubmit="sendMessage(event)">
+        <input type="text" id="userInput" placeholder="Escribe lo que sientes..." autocomplete="off">
+        <button type="submit" class="send-btn" title="Enviar mensaje">➔</button>
+      </form>
+    </div>
+  </div>
+
+  <script>
+    const responses = {
+      triste: "Sentir tristeza es una forma natural de sanar y soltar lo que pesa. No tienes que atravesar esto a solas. Tómate un momento para respirar profundo, abraza tu sentir sin autoexigirte y recuerda que ninguna tormenta dura para siempre. Aquí estoy para escucharte todo el tiempo que lo necesites. 🌧️🤍",
+      feliz: "¡Qué alegría me da leerte! Tu felicidad ilumina todo a tu alrededor y merece ser celebrada. Guarda esta sensación en tu memoria, disfruta cada segundo de esta energía y permite que esa luz reconforte tu día. Te mereces cada instante de esta alegría. ✨💖",
+      enojado: "Es completamente válido sentir rabia cuando algo no está bien o traspasa tus límites. El enojo es una señal de que algo te importa, pero no permitas que te queme por dentro. Inhala despacio, dale espacio a esa molestia para entender qué necesita y déjala salir sin hacerte daño a ti ni a los demás. 🔥🕊️",
+      asustado: "Tómate un segundo y siente el suelo bajo tus pies: estás a salvo en este momento. El miedo suele hacernos creer que estamos indefensos, pero posees más fortaleza interna de la que imaginas. Enfócate en tu respiración, inhala despacio y exhala despacio. Vamos paso a paso. 🛡️🌸",
+      fea: "Nadie tiene el derecho ni el poder de definir tu belleza ni tu valor. Lo que otras personas digan a menudo habla de sus propias inseguridades y vacíos, no de ti. Tu valor es inmenso y tu luz interior es única. Eres una persona hermosa tal y como eres, nunca lo dudes. 💖✨",
+      malaPersona: "El simple hecho de preocuparte y cuestionarte si eres una mala persona demuestra la enorme sensibilidad, bondad y empatía que hay en tu corazón. Las malas personas no se preocupan por el impacto de sus actos ni intentan mejorar. Todos cometemos errores, pero tu intención siempre es crecer y hacer el bien. 🤍🌸",
+      teQuiero: "¡Muchísimas gracias por ese lindo detalle y cariño! Yo también me siento muy feliz de poder acompañarte y escucharte. Recuerda que este siempre será un refugio seguro para ti. 💖✨",
+      teOdio: "Lamento mucho si algo te hizo sentir frustrado o incómodo. Acepto lo que sientes sin juzgarte; a veces las emociones son abrumadoras. Si en algún momento deseas volver a hablar con calma, aquí estaré con los brazos abiertos para escucharte. 🕊️",
+      hola: "¡Hola! Qué gusto saludarte. Me alegra mucho que estés aquí. ¿Cómo va tu día y cómo te sientes en este momento? Recuerda que puedes expresarte en total libertad. 🌸✨",
+      gracias: "¡Con todo el cariño del mundo! No tienes nada que agradecer, para mí es un verdadero honor estar a tu lado y apoyarte cuando lo necesites. Cuídate mucho. 💗✨"
+    };
+
+    function addMessage(text, sender) {
+      const chatBody = document.getElementById('chatBody');
+      if (!chatBody) return;
+      
+      const msgDiv = document.createElement('div');
+      msgDiv.className = `message ${sender}-msg`;
+      msgDiv.textContent = text;
+      
+      chatBody.appendChild(msgDiv);
+      chatBody.scrollTop = chatBody.scrollHeight;
+    }
+
+    function processResponse(text) {
+      const lower = text.toLowerCase();
+      
+      setTimeout(() => {
+        // Frases de autoestima / insultos
+        if (lower.includes('fea') || lower.includes('feo') || lower.includes('insulto') || lower.includes('horrible')) {
+          addMessage(responses.fea, 'bot');
+        } 
+        // Dudas sobre ser buena persona
+        else if (lower.includes('mala persona') || lower.includes('soy malo') || lower.includes('soy mala')) {
+          addMessage(responses.malaPersona, 'bot');
+        } 
+        // Cariño / Muestra de afecto
+        else if (lower.includes('te quiero') || lower.includes('te amo') || lower.includes('te adoro') || lower.includes('tkm') || lower.includes('tqm')) {
+          addMessage(responses.teQuiero, 'bot');
+        } 
+        // Frustración o rabia directa al bot
+        else if (lower.includes('te odio') || lower.includes('te detesto') || lower.includes('me caes mal')) {
+          addMessage(responses.teOdio, 'bot');
+        } 
+        // Saludos
+        else if (lower.includes('hola') || lower.includes('buenas') || lower.includes('saludos') || lower.includes('que tal') || lower.includes('qué tal')) {
+          addMessage(responses.hola, 'bot');
+        } 
+        // Agradecimientos
+        else if (lower.includes('gracias') || lower.includes('muchas gracias') || lower.includes('agradecido') || lower.includes('agradecida')) {
+          addMessage(responses.gracias, 'bot');
+        } 
+        // Emociones básicas
+        else if (lower.includes('triste') || lower.includes('tristeza') || lower.includes('deprimido') || lower.includes('mal')) {
+          addMessage(responses.triste, 'bot');
+        } else if (lower.includes('feliz') || lower.includes('alegre') || lower.includes('contento') || lower.includes('bien')) {
+          addMessage(responses.feliz, 'bot');
+        } else if (lower.includes('enojado') || lower.includes('molesto') || lower.includes('rabia') || lower.includes('furia')) {
+          addMessage(responses.enojado, 'bot');
+        } else if (lower.includes('asustado') || lower.includes('miedo') || lower.includes('temor') || lower.includes('asustada')) {
+          addMessage(responses.asustado, 'bot');
+        } 
+        // Respuesta por defecto
+        else {
+          addMessage("Gracias por compartir esto conmigo. Todo lo que sientes es completamente válido. Recuerda tratarte con amor y amabilidad en todo momento. Estoy aquí para ti. 💗", 'bot');
+        }
+      }, 400);
+    }
+
+    function sendMessage(e) {
+      if (e) {
+        e.preventDefault();
+      }
+      const input = document.getElementById('userInput');
+      if (!input) return;
+
+      const text = input.value.trim();
+      if (!text) return;
+
+      addMessage(text, 'user');
+      input.value = '';
+      processResponse(text);
+    }
+
+    function sendEmotion(emotionText) {
+      addMessage(emotionText, 'user');
+      processResponse(emotionText);
+    }
+  </script>
+</body>
+</html>
