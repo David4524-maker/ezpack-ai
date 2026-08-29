@@ -1,0 +1,723 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>EZPack AI CODE</title>
+  <style>
+    :root {
+      --bg-primary: #0d1117;
+      --bg-secondary: #161b22;
+      --bg-tertiary: #21262d;
+      --accent-color: #58a6ff;
+      --accent-green: #3fb950;
+      --accent-purple: #bc8cff;
+      --accent-orange: #f0883e;
+      --accent-red: #f85149;
+      --text-main: #c9d1d9;
+      --text-muted: #8b949e;
+      --border-color: #30363d;
+      --code-font: 'Fira Code', 'Courier New', monospace;
+    }
+
+    [data-theme="monokai"] {
+      --bg-primary: #272822; --bg-secondary: #1e1f1c; --bg-tertiary: #3e3d32;
+      --accent-color: #a6e22e; --accent-green: #a6e22e; --accent-purple: #ae81ff;
+      --text-main: #f8f8f2; --border-color: #49483e;
+    }
+
+    [data-theme="cyberpunk"] {
+      --bg-primary: #050510; --bg-secondary: #0d0e26; --bg-tertiary: #1b1c4b;
+      --accent-color: #ff0055; --accent-green: #00ffcc; --accent-purple: #9d00ff;
+      --text-main: #ffffff; --border-color: #ff0055;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background-color: var(--bg-primary);
+      color: var(--text-main);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    header {
+      background: var(--bg-secondary);
+      border-bottom: 1px solid var(--border-color);
+      padding: 8px 16px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-shrink: 0;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-weight: bold;
+      font-size: 1rem;
+      color: var(--accent-color);
+    }
+
+    .badge-engine {
+      background: rgba(188, 140, 255, 0.15);
+      color: var(--accent-purple);
+      border: 1px solid var(--accent-purple);
+      padding: 2px 8px;
+      border-radius: 12px;
+      font-size: 0.7rem;
+    }
+
+    .actions-header { display: flex; gap: 6px; }
+
+    .icon-btn {
+      background: var(--bg-tertiary);
+      border: 1px solid var(--border-color);
+      color: var(--text-main);
+      padding: 5px 10px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 0.78rem;
+      transition: all 0.2s;
+    }
+    .icon-btn:hover { border-color: var(--accent-color); color: var(--accent-color); }
+
+    .main-layout {
+      display: grid;
+      grid-template-columns: 280px 1fr;
+      flex: 1;
+      min-height: 0;
+    }
+
+    aside {
+      background: var(--bg-secondary);
+      border-right: 1px solid var(--border-color);
+      padding: 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      overflow-y: auto;
+    }
+
+    .section-title {
+      font-size: 0.7rem;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      letter-spacing: 1px;
+      font-weight: bold;
+    }
+
+    .lang-selector { display: flex; flex-direction: column; gap: 4px; }
+
+    .lang-btn {
+      background: transparent;
+      border: 1px solid transparent;
+      color: var(--text-main);
+      padding: 6px 10px;
+      border-radius: 6px;
+      text-align: left;
+      cursor: pointer;
+      font-size: 0.82rem;
+    }
+    .lang-btn.active {
+      background: var(--bg-tertiary);
+      border-color: var(--accent-color);
+      color: var(--accent-color);
+      font-weight: 600;
+    }
+
+    .quick-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 4px;
+      max-height: 480px;
+      overflow-y: auto;
+    }
+
+    .quick-grid button {
+      font-size: 0.72rem;
+      padding: 6px 4px;
+      text-align: left;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .chat-container {
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+      min-height: 0;
+      background: var(--bg-primary);
+    }
+
+    .chat-history {
+      flex: 1;
+      padding: 16px;
+      overflow-y: scroll;
+      scroll-behavior: smooth;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .message { display: flex; flex-direction: column; gap: 6px; max-width: 90%; }
+    .message.user { align-self: flex-end; }
+    .message.ai { align-self: flex-start; width: 100%; max-width: 95%; }
+
+    .msg-bubble {
+      padding: 12px 16px;
+      border-radius: 8px;
+      font-size: 0.9rem;
+      line-height: 1.5;
+    }
+
+    .user .msg-bubble { background: var(--accent-color); color: #000; font-weight: 500; }
+    .ai .msg-bubble { background: var(--bg-secondary); border: 1px solid var(--border-color); width: 100%; }
+
+    .thinking-box {
+      background: rgba(188, 140, 255, 0.08);
+      border-left: 3px solid var(--accent-purple);
+      padding: 8px 12px;
+      margin-bottom: 10px;
+      border-radius: 0 6px 6px 0;
+      font-size: 0.8rem;
+      color: var(--text-muted);
+    }
+
+    .code-block {
+      background: var(--bg-primary);
+      border: 1px solid var(--border-color);
+      border-radius: 6px;
+      margin-top: 8px;
+      overflow: hidden;
+      font-family: var(--code-font);
+    }
+
+    .code-header {
+      background: var(--bg-tertiary);
+      padding: 6px 10px;
+      font-size: 0.75rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      color: var(--text-muted);
+      border-bottom: 1px solid var(--border-color);
+    }
+
+    .code-controls { display: flex; gap: 4px; }
+
+    .code-btn {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border-color);
+      color: var(--text-main);
+      padding: 2px 6px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 0.7rem;
+    }
+    .code-btn:hover { border-color: var(--accent-color); color: var(--accent-color); }
+
+    .code-body {
+      padding: 10px;
+      overflow-x: auto;
+      white-space: pre;
+      font-size: 0.83rem;
+      color: var(--accent-green);
+      max-height: 400px;
+      overflow-y: auto;
+    }
+
+    .input-area {
+      padding: 12px;
+      background: var(--bg-secondary);
+      border-top: 1px solid var(--border-color);
+      display: flex;
+      gap: 8px;
+      flex-shrink: 0;
+    }
+
+    textarea {
+      flex: 1;
+      background: var(--bg-primary);
+      border: 1px solid var(--border-color);
+      color: var(--text-main);
+      padding: 8px;
+      border-radius: 6px;
+      resize: none;
+      height: 48px;
+      font-family: inherit;
+      outline: none;
+      font-size: 0.9rem;
+    }
+    textarea:focus { border-color: var(--accent-color); }
+
+    .send-btn {
+      background: var(--accent-color);
+      color: #000;
+      border: none;
+      padding: 0 20px;
+      border-radius: 6px;
+      font-weight: bold;
+      cursor: pointer;
+    }
+
+    .preview-modal {
+      display: none;
+      position: fixed;
+      top: 3%; left: 3%; width: 94%; height: 94%;
+      background: #111;
+      z-index: 200;
+      border-radius: 8px;
+      box-shadow: 0 0 30px rgba(0,0,0,0.9);
+      flex-direction: column;
+      border: 1px solid var(--border-color);
+    }
+    .preview-header {
+      background: #222; color: #fff; padding: 6px 12px;
+      display: flex; justify-content: space-between; align-items: center;
+      font-size: 0.85rem;
+    }
+    iframe { width: 100%; height: 100%; border: none; background: #fff; }
+
+    .toast {
+      position: fixed; bottom: 20px; right: 20px;
+      background: var(--accent-color); color: #000;
+      padding: 8px 14px; border-radius: 6px; font-weight: bold;
+      display: none; z-index: 300; font-size: 0.85rem;
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <div class="brand">
+      ⚡ EZPack AI CODE <span class="badge-engine">CODE Edition</span>
+    </div>
+    <div class="actions-header">
+      <button class="icon-btn" onclick="openTheme()">🎨 Tema</button>
+      <button class="icon-btn" onclick="clearHistory()">🗑️ Limpiar</button>
+      <button class="icon-btn" onclick="exportMarkdown()">📥 Exportar</button>
+    </div>
+  </header>
+
+  <div class="main-layout">
+    <aside>
+      <span class="section-title">Lenguaje Objetivo</span>
+      <div class="lang-selector">
+        <button class="lang-btn active" onclick="setLanguage('codepen', 'CodePen (HTML/CSS/JS)', event)">🌐 CodePen (Web Engine)</button>
+        <button class="lang-btn" onclick="setLanguage('python', 'Python 3', event)">🐍 Python</button>
+        <button class="lang-btn" onclick="setLanguage('java', 'Java', event)">☕ Java</button>
+        <button class="lang-btn" onclick="setLanguage('cpp', 'C++', event)">⚡ C++</button>
+        <button class="lang-btn" onclick="setLanguage('scratch', 'Scratch Logic', event)">🧩 Scratch</button>
+      </div>
+
+      <span class="section-title" style="margin-top:8px;">Módulos Rápidos</span>
+      <div class="quick-grid">
+        <button class="icon-btn" onclick="quickPrompt('Minecraft 3D Voxel Engine')">⛏️ Minecraft</button>
+        <button class="icon-btn" onclick="quickPrompt('Lenguaje de Programacion EZScript')">📜 Lenguaje EZ</button>
+        <button class="icon-btn" onclick="quickPrompt('Mascota de escritorio Eilik')">🤖 Eilik Robot</button>
+        <button class="icon-btn" onclick="quickPrompt('Paint Canvas App')">🎨 Paint Studio</button>
+        <button class="icon-btn" onclick="quickPrompt('Camara Web Stream')">📷 Cámara Web</button>
+        <button class="icon-btn" onclick="quickPrompt('Simulador Windows 11')">🪟 Windows OS</button>
+        <button class="icon-btn" onclick="quickPrompt('Simulador macOS Desktop')">🍎 macOS</button>
+        <button class="icon-btn" onclick="quickPrompt('Simulador Linux Terminal OS')">🐧 Linux Terminal</button>
+        <button class="icon-btn" onclick="quickPrompt('Interfaz YouTube UI')">▶️ YouTube UI</button>
+        <button class="icon-btn" onclick="quickPrompt('Explorador de Archivos UI')">📁 Explorador</button>
+        <button class="icon-btn" onclick="quickPrompt('Calculadora Cientifica')">🧮 Calculadora</button>
+        <button class="icon-btn" onclick="quickPrompt('Lista de Tareas To-Do')">📋 To-Do List</button>
+        <button class="icon-btn" onclick="quickPrompt('Consola 8 bits Retro')">🕹️ Consola 8-Bit</button>
+        <button class="icon-btn" onclick="quickPrompt('Consola 16 bits Retro')">🎮 Consola 16-Bit</button>
+        <button class="icon-btn" onclick="quickPrompt('Consola 32 bits Retro')">💿 Consola 32-Bit</button>
+        <button class="icon-btn" onclick="quickPrompt('Consola 64 bits Retro')">💎 Consola 64-Bit</button>
+        <button class="icon-btn" onclick="quickPrompt('Terminal CMD Prompt Windows')">💻 CMD Prompt</button>
+        <button class="icon-btn" onclick="quickPrompt('Terminal Bash Linux')">🐚 Terminal Bash</button>
+        <button class="icon-btn" onclick="quickPrompt('Efecto Custom Cursor JS')">🖱️ Custom Cursor</button>
+        <button class="icon-btn" onclick="quickPrompt('Herramienta VERITY Security Tool')">🛡️ VERITY Tool</button>
+        <button class="icon-btn" onclick="quickPrompt('Panel de Ajustes Settings UI')">⚙️ Ajustes</button>
+        <button class="icon-btn" onclick="quickPrompt('IA Chatbot Gemini UI')">✨ Gemini AI</button>
+        <button class="icon-btn" onclick="quickPrompt('IA Chatbot ChatGPT UI')">🟢 ChatGPT UI</button>
+        <button class="icon-btn" onclick="quickPrompt('IA Chatbot Claude UI')">🟠 Claude UI</button>
+        <button class="icon-btn" onclick="quickPrompt('IA Chatbot Copilot UI')">🔵 Copilot UI</button>
+        <button class="icon-btn" onclick="quickPrompt('IA Chatbot Grok Mode UI')">🚀 Grok Mode</button>
+        <button class="icon-btn" onclick="quickPrompt('Sora 2 Video Generator UI')">🎬 Sora 2 Studio</button>
+        <button class="icon-btn" onclick="quickPrompt('Mascota de Escritorio Desktop Pet')">🐶 Desktop Pet</button>
+      </div>
+    </aside>
+
+    <main class="chat-container">
+      <div class="chat-history" id="chat-history">
+        <div class="message ai">
+          <div class="msg-bubble">
+            ¡Hola! Sistema <strong>EZEngine Local</strong> listo. Genero código real ejecutable para módulos Web interactivos (Paint, Minecraft 2D, Cámara, Calculadora, Consolas) o maquetas UI explícitas para prototipos visuales.
+          </div>
+        </div>
+      </div>
+
+      <div class="input-area">
+        <textarea id="user-input" placeholder="Escribe tu idea (ej: Paint Canvas, Minecraft 2D, Calculadora)..." onkeydown="handleKeyDown(event)"></textarea>
+        <button class="send-btn" id="send-btn" onclick="generateCode()">Generar</button>
+      </div>
+    </main>
+  </div>
+
+  <div class="preview-modal" id="preview-modal">
+    <div class="preview-header">
+      <span id="preview-title">EZEngine Live Execution Environment</span>
+      <button class="code-btn" onclick="closePreview()">Cerrar [X]</button>
+    </div>
+    <iframe id="preview-iframe"></iframe>
+  </div>
+
+  <div class="toast" id="toast">Notificación</div>
+
+  <script>
+    let currentLanguage = 'codepen';
+    let isProcessing = false;
+    let codeBlockCounter = 0;
+    let conversationHistory = [];
+
+    const EZEngine = {
+      analyzeIntent(prompt) {
+        const t = prompt.toLowerCase();
+        if (t.includes('minecraft')) return 'minecraft';
+        if (t.includes('eilik')) return 'pet';
+        if (t.includes('paint')) return 'paint';
+        if (t.includes('camara') || t.includes('cámara')) return 'camera';
+        if (t.includes('calculadora')) return 'calc';
+        if (t.includes('todo') || t.includes('tarea')) return 'todo';
+        if (t.includes('windows')) return 'win_os';
+        if (t.includes('macos') || t.includes('mac')) return 'mac_os';
+        if (t.includes('linux terminal') || t.includes('simulador linux')) return 'linux_os';
+        if (t.includes('youtube')) return 'youtube_ui';
+        if (t.includes('explorador')) return 'explorer_ui';
+        if (t.includes('16 bit') || t.includes('16-bit')) return 'console_16';
+        if (t.includes('32 bit') || t.includes('32-bit')) return 'console_32';
+        if (t.includes('64 bit') || t.includes('64-bit')) return 'console_64';
+        if (t.includes('8 bit') || t.includes('8-bit')) return 'console_ui';
+        if (t.includes('cmd')) return 'cmd_ui';
+        if (t.includes('bash')) return 'bash_ui';
+        if (t.includes('cursor')) return 'cursor_js';
+        if (t.includes('verity')) return 'verity_ui';
+        if (t.includes('ajustes') || t.includes('settings')) return 'settings_ui';
+        if (t.includes('chatgpt')) return 'chatgpt_ui';
+        if (t.includes('claude')) return 'claude_ui';
+        if (t.includes('copilot')) return 'copilot_ui';
+        if (t.includes('grok')) return 'grok_ui';
+        if (t.includes('gemini')) return 'ai_ui';
+        if (t.includes('sora')) return 'sora_ui';
+        if (t.includes('desktop pet') || t.includes('mascota de escritorio')) return 'desktop_pet';
+        if (t.includes('ezscript') || t.includes('lenguaje ez')) return 'ezscript';
+        return 'unknown';
+      },
+
+      synthesize(prompt, lang) {
+        const intent = this.analyzeIntent(prompt);
+        
+        // Módulos que tienen lógica real ejecutable en JS
+        const isFunctional = ['minecraft', 'pet', 'paint', 'camera', 'calc', 'todo', 'cursor_js', 'cmd_ui', 'bash_ui', 'desktop_pet'].includes(intent);
+        
+        // Módulos que son únicamente maquetas de interfaz visual (sin motor real por detrás)
+        const isMockup = ['win_os', 'mac_os', 'linux_os', 'ai_ui', 'sora_ui', 'console_ui', 'youtube_ui', 'explorer_ui', 'console_16', 'console_32', 'console_64', 'verity_ui', 'settings_ui', 'chatgpt_ui', 'claude_ui', 'copilot_ui', 'grok_ui', 'ezscript'].includes(intent);
+
+        if (!isFunctional && !isMockup) {
+          return {
+            status: 'unsupported',
+            text: `⚠️ **Módulo no disponible en la plantilla local.**\n\nEl sistema local no tiene una plantilla funcional predefinida para **"${prompt}"**. Por favor, especifica las funciones exactas o componentes HTML/CSS/JS que deseas programar.`
+          };
+        }
+
+        let codeSnippet = '';
+        if (lang === 'codepen') codeSnippet = this.generateCodePen(intent, prompt);
+        else if (lang === 'python') codeSnippet = this.generatePython(intent, prompt);
+        else if (lang === 'java') codeSnippet = this.generateJava(intent, prompt);
+        else if (lang === 'cpp') codeSnippet = this.generateCPP(intent, prompt);
+        else if (lang === 'scratch') codeSnippet = this.generateScratch(intent, prompt);
+
+        const headerText = isFunctional 
+          ? `✅ **Código Funcional Generado** para **${prompt}**:`
+          : `🎨 **Prototipo Visual (Maqueta UI)** para **${prompt}** *(Nota: Esta es una plantilla gráfica de interfaz, no un motor funcional completo)*:`;
+
+        return {
+          status: isFunctional ? 'functional' : 'mockup',
+          text: `${headerText}\n\n${codeSnippet}`
+        };
+      },
+
+      generateCodePen(intent, prompt) {
+        let css = `body{margin:0;background:#0d1117;color:#fff;font-family:sans-serif;display:flex;justify-content:center;align-items:center;min-height:100vh;overflow:hidden;}`;
+        let html = ``, js = ``;
+
+        switch(intent) {
+          case 'minecraft':
+            html = `<div style="text-align:center;"><h2>⛏️ Minecraft Voxel Engine 2D</h2><canvas id="mc" width="400" height="240" style="border:2px solid #58a6ff;background:#70a5ff;"></canvas><p>Haz clic para colocar/romper bloques</p></div>`;
+            js = `const c=document.getElementById('mc'),ctx=c.getContext('2d');
+            let grid=Array(12).fill(0).map((_,y)=>Array(20).fill(0).map((_,x)=>y>7?1:y===7?2:0));
+            function draw(){ctx.clearRect(0,0,400,240);for(let y=0;y<12;y++)for(let x=0;x<20;x++){if(grid[y][x]===1){ctx.fillStyle='#8b5a2b';ctx.fillRect(x*20,y*20,20,20);}else if(grid[y][x]===2){ctx.fillStyle='#3fb950';ctx.fillRect(x*20,y*20,20,20);}}}
+            c.addEventListener('click',e=>{const r=c.getBoundingClientRect(),x=Math.floor((e.clientX-r.left)/20),y=Math.floor((e.clientY-r.top)/20);grid[y][x]=grid[y][x]?0:1;draw();});draw();`;
+            break;
+          case 'pet':
+            html = `<div style="text-align:center;background:#222;padding:30px;border-radius:20px;border:3px solid #bc8cff;">
+            <div id="eilik-face" style="width:120px;height:80px;background:#00d2ff;border-radius:15px;margin:0 auto 15px;display:flex;justify-content:space-around;align-items:center;">
+            <div style="width:20px;height:20px;background:#000;border-radius:50%;"></div><div style="width:20px;height:20px;background:#000;border-radius:50%;"></div></div>
+            <h3>🤖 Eilik Companion</h3><button onclick="pet()" style="padding:8px 16px;background:#bc8cff;border:none;border-radius:6px;cursor:pointer;font-weight:bold;">Acariciar</button></div>`;
+            js = `function pet(){const f=document.getElementById('eilik-face');f.style.background='#ff007f';setTimeout(()=>f.style.background='#00d2ff',1000);}`;
+            break;
+          case 'paint':
+            html = `<div style="text-align:center;"><h2>🎨 EZ Paint Canvas</h2><canvas id="p" width="400" height="300" style="background:#fff;border:2px solid #333;cursor:crosshair;"></canvas><br><button onclick="ctx.clearRect(0,0,400,300)" style="margin-top:8px;padding:6px 12px;">Limpiar</button></div>`;
+            js = `const c=document.getElementById('p'),ctx=c.getContext('2d');let d=false;c.onmousedown=()=>d=true;c.onmouseup=()=>d=false;c.onmousemove=e=>{if(!d)return;const r=c.getBoundingClientRect();ctx.fillStyle='#58a6ff';ctx.beginPath();ctx.arc(e.clientX-r.left,e.clientY-r.top,4,0,Math.PI*2);ctx.fill();};`;
+            break;
+          case 'camera':
+            html = `<div style="text-align:center;"><h2>📷 Cámara Stream</h2><video id="v" autoplay style="width:320px;height:240px;background:#000;border-radius:8px;"></video><br><button onclick="startCam()" style="margin-top:8px;padding:6px 12px;background:#3fb950;border:none;border-radius:4px;cursor:pointer;">Activar Cámara</button></div>`;
+            js = `function startCam(){navigator.mediaDevices.getUserMedia({video:true}).then(s=>document.getElementById('v').srcObject=s).catch(()=>alert('Permiso de cámara no disponible'));}`;
+            break;
+          case 'calc':
+            html = `<div style="background:#222;padding:15px;border-radius:10px;text-align:center;"><input id="res" readonly style="width:100%;height:30px;font-size:1.2rem;margin-bottom:10px;text-align:right;"><br><button onclick="res.value+='1'">1</button><button onclick="res.value+='2'">2</button><button onclick="res.value+='+'">+</button><button onclick="res.value=eval(res.value)">=</button></div>`;
+            break;
+          case 'todo':
+            html = `<div style="background:#1e1e2e;padding:20px;border-radius:8px;width:300px;"><h3>📋 To-Do List</h3><input id="ti" placeholder="Nueva tarea..." style="padding:6px;width:70%;"><button onclick="addT()" style="padding:6px;">+</button><ul id="tl" style="margin-top:10px;text-align:left;"></ul></div>`;
+            js = `function addT(){const i=document.getElementById('ti'),l=document.getElementById('tl');if(!i.value)return;const li=document.createElement('li');li.textContent=i.value;l.appendChild(li);i.value='';}`;
+            break;
+          case 'sora_ui':
+            html = `<div style="text-align:center;background:#111;padding:20px;border-radius:12px;border:1px solid #ff0055;">
+            <h2>🎬 Sora 2 Studio (Maqueta UI)</h2><p style="font-size:0.8rem;color:#888;">Renderizador no conectado a servidor AI</p><br><input type="text" placeholder="Describe la escena..." style="padding:8px;width:200px;"><button style="padding:8px;background:#ff0055;color:#fff;border:none;margin-left:4px;">Generar</button></div>`;
+            break;
+          case 'win_os': case 'mac_os': case 'linux_os':
+            html = `<div style="width:300px;height:180px;background:#1e1e2e;border:1px solid #444;border-radius:8px;padding:10px;">
+            <div style="background:#333;padding:4px;"><span style="color:#ff5f56">●</span> Escritorio Virtual (Prototipo UI)</div><p style="padding:10px;font-size:0.8rem;">Entorno gráfico estático.</p></div>`;
+            break;
+          case 'ai_ui': case 'chatgpt_ui': case 'claude_ui': case 'copilot_ui': case 'grok_ui':
+            html = `<div style="width:300px;background:#161b22;border:1px solid #30363d;padding:15px;border-radius:8px;">
+            <h3>✨ Interfaz Chatbot AI (${prompt})</h3><p style="font-size:0.75rem;color:#888;margin-top:6px;">Plantilla de interfaz visual lista para conectar a tu API de IA favorita.</p></div>`;
+            break;
+          case 'console_ui': case 'console_16': case 'console_32': case 'console_64':
+            html = `<div style="text-align:center;background:#000;padding:20px;border:2px solid #00ffcc;border-radius:10px;">
+            <h3 style="color:#00ffcc;">🕹️ ${prompt}</h3><p style="color:#666;font-size:0.75rem;margin-top:8px;">Superficie de renderizado retro preparada para motor HTML5 Canvas.</p></div>`;
+            break;
+          case 'youtube_ui':
+            html = `<div style="width:320px;background:#0f0f0f;border:1px solid #333;border-radius:8px;padding:10px;text-align:center;">
+            <h3 style="color:#ff0000;">▶️ YouTube Player UI</h3><div style="width:100%;height:150px;background:#222;margin:10px 0;display:flex;justify-content:center;align-items:center;">[ Video Container ]</div><input placeholder="Buscar vídeo..." style="width:80%;padding:4px;"></div>`;
+            break;
+          case 'explorer_ui':
+            html = `<div style="width:300px;background:#202020;border:1px solid #444;border-radius:6px;padding:10px;">
+            <div style="font-weight:bold;border-bottom:1px solid #444;padding-bottom:4px;">📁 Explorador de Archivos</div><div style="margin-top:10px;font-size:0.85rem;">📄 main.ez<br>📁 src<br>📄 config.json</div></div>`;
+            break;
+          case 'cmd_ui':
+            html = `<div style="width:320px;background:#000;color:#00ff00;font-family:monospace;padding:10px;border-radius:4px;text-align:left;">
+            <div>Microsoft Windows [Versión 10.0]</div><div>(c) Corporation. Todos los derechos reservados.</div><br><div id="out">C:\\Users\\Admin&gt; <input id="cmd" style="background:transparent;border:none;color:#00ff00;font-family:monospace;outline:none;" onkeydown="if(event.key==='Enter'){document.getElementById('out').innerHTML+='<br>Ejecutado: '+this.value+'<br>C:\\\\Users\\\\Admin&gt; ';this.value='';}"></div></div>`;
+            break;
+          case 'bash_ui':
+            html = `<div style="width:320px;background:#300a24;color:#fff;font-family:monospace;padding:10px;border-radius:4px;text-align:left;">
+            <div>user@ezpack:~$ <input id="bcmd" style="background:transparent;border:none;color:#fff;font-family:monospace;outline:none;" onkeydown="if(event.key==='Enter'){this.parentElement.innerHTML+='<br>bash: '+this.value+': comando no encontrado<br>user@ezpack:~$ ';this.value='';}"></div></div>`;
+            break;
+          case 'cursor_js':
+            html = `<div id="c-box" style="width:300px;height:200px;background:#111;border:1px solid #58a6ff;position:relative;overflow:hidden;text-align:center;padding-top:20px;">
+            <p>Mueve el ratón aquí</p><div id="cur" style="width:15px;height:15px;background:#58a6ff;border-radius:50%;position:absolute;pointer-events:none;transition:transform 0.05s linear;"></div></div>`;
+            js = `const box=document.getElementById('c-box'),cur=document.getElementById('cur');box.onmousemove=e=>{const r=box.getBoundingClientRect();cur.style.left=(e.clientX-r.left-7)+'px';cur.style.top=(e.clientY-r.top-7)+'px';};`;
+            break;
+          case 'verity_ui':
+            html = `<div style="width:300px;background:#0d1117;border:1px solid #3fb950;padding:15px;border-radius:8px;text-align:center;">
+            <h3 style="color:#3fb950;">🛡️ VERITY Security Tool</h3><p style="font-size:0.8rem;margin-top:8px;">Estado del Sistema: <b style="color:#3fb950;">PROTEGIDO</b></p></div>`;
+            break;
+          case 'settings_ui':
+            html = `<div style="width:280px;background:#161b22;border:1px solid #30363d;padding:15px;border-radius:8px;">
+            <h3>⚙️ Panel de Ajustes</h3><hr style="border-color:#30363d;margin:8px 0;"><label><input type="checkbox" checked> Modo Oscuro</label><br><label><input type="checkbox" checked> Notificaciones</label></div>`;
+            break;
+          case 'desktop_pet':
+            html = `<div style="text-align:center;"><h3>🐶 Desktop Pet</h3><div id="pet" style="font-size:3rem;cursor:pointer;user-select:none;" onclick="this.style.transform='scale(1.3)';setTimeout(()=>this.style.transform='scale(1)',200)">🐶</div><p style="font-size:0.75rem;">Haz clic en la mascota</p></div>`;
+            break;
+          case 'ezscript':
+            html = `<div style="width:300px;background:#1e1e2e;padding:12px;border-radius:8px;border:1px solid #bc8cff;">
+            <h3 style="color:#bc8cff;">📜 Lenguaje EZScript (.ez)</h3><pre style="color:#c9d1d9;font-size:0.8rem;margin-top:6px;">fun inicio() {\n  imprimir("¡Hola desde EZScript!");\n}</pre></div>`;
+            break;
+        }
+
+        const fullHTML = `<!DOCTYPE html>\n<html lang="es">\n<head>\n  <meta charset="UTF-8">\n  <style>\n${css}\n  </style>\n</head>\n<body>\n  ${html}\n  <script>\n${js}\n  <\/script>\n</body>\n</html>`;
+        return `\`\`\`html\n${fullHTML}\n\`\`\``;
+      },
+
+      generatePython(intent, prompt) {
+        return `\`\`\`python\n# Plantilla base en Python para: ${prompt}\nclass Modulo:\n    def __init__(self):\n        self.nombre = "${prompt}"\n\n    def ejecutar(self):\n        print(f"Ejecutando lógica base de: {self.nombre}")\n\nif __name__ == "__main__":\n    app = Modulo()\n    app.ejecutar()\n\`\`\``;
+      },
+
+      generateJava(intent, prompt) {
+        return `\`\`\`java\n// Estructura base en Java\npublic class Main {\n    public static void main(String[] args) {\n        System.out.println("Modulo base para: " + "${prompt}");\n    }\n}\n\`\`\``;
+      },
+
+      generateCPP(intent, prompt) {
+        return `\`\`\`cpp\n// Estructura base en C++\n#include <iostream>\n\nint main() {\n    std::cout << "Modulo base para: ${prompt}" << std::endl;\n    return 0;\n}\n\`\`\``;
+      },
+
+      generateScratch(intent, prompt) {
+        return `\`\`\`text\n[Al hacer clic en BANDERA VERDE]\n ├─ Fijar [Módulo] a "${prompt}"\n └─ Decir (Unir "Módulo base: " [Módulo]) por 2 segundos\n\`\`\``;
+      }
+    };
+
+    function showToast(msg) {
+      const toast = document.getElementById('toast');
+      toast.textContent = msg;
+      toast.style.display = 'block';
+      setTimeout(() => { toast.style.display = 'none'; }, 2000);
+    }
+
+    function openTheme() {
+      const current = document.body.getAttribute('data-theme') || 'github';
+      const next = current === 'github' ? 'monokai' : current === 'monokai' ? 'cyberpunk' : 'github';
+      document.body.setAttribute('data-theme', next);
+      showToast(`Tema cambiado a: ${next.toUpperCase()}`);
+    }
+
+    function setLanguage(lang, label, e) {
+      currentLanguage = lang;
+      document.querySelectorAll('.lang-btn').forEach(btn => btn.classList.remove('active'));
+      if (e && e.currentTarget) e.currentTarget.classList.add('active');
+    }
+
+    function handleKeyDown(e) {
+      if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); generateCode(); }
+    }
+
+    function scrollToBottom() {
+      const history = document.getElementById('chat-history');
+      requestAnimationFrame(() => { history.scrollTop = history.scrollHeight; });
+    }
+
+    function quickPrompt(promptText) {
+      document.getElementById('user-input').value = promptText;
+      generateCode();
+    }
+
+    async function generateCode() {
+      const inputEl = document.getElementById('user-input');
+      const text = inputEl.value.trim();
+      if (!text || isProcessing) return;
+
+      isProcessing = true;
+      appendMessage('user', text);
+      inputEl.value = '';
+
+      const historyEl = document.getElementById('chat-history');
+      const aiMsgDiv = document.createElement('div');
+      aiMsgDiv.className = 'message ai';
+      const bubble = document.createElement('div');
+      bubble.className = 'msg-bubble';
+
+      const thinkingBox = document.createElement('div');
+      thinkingBox.className = 'thinking-box';
+      thinkingBox.innerHTML = `⚡ Evaluando requerimientos para <b>${text}</b>...`;
+      bubble.appendChild(thinkingBox);
+      aiMsgDiv.appendChild(bubble);
+      historyEl.appendChild(aiMsgDiv);
+      scrollToBottom();
+
+      setTimeout(() => {
+        const result = EZEngine.synthesize(text, currentLanguage);
+        conversationHistory.push({ role: "user", content: text }, { role: "assistant", content: result.text });
+
+        if (result.status === 'functional') {
+          thinkingBox.innerHTML = `<span style="color:var(--accent-green)">✓ Módulo ejecutable generado correctamente.</span>`;
+        } else if (result.status === 'mockup') {
+          thinkingBox.innerHTML = `<span style="color:var(--accent-orange)">🎨 Prototipo visual (UI solamente) — Sin backend/motor.</span>`;
+        } else {
+          thinkingBox.innerHTML = `<span style="color:var(--accent-red)">⚠️ Módulo no disponible localmente.</span>`;
+        }
+
+        renderFormattedResponse(bubble, result.text);
+        scrollToBottom();
+        isProcessing = false;
+      }, 200);
+    }
+
+    function renderFormattedResponse(container, text) {
+      const codeRegex = /```(\w+)?\n([\s\S]*?)```/g;
+      let lastIndex = 0;
+      let match;
+
+      while ((match = codeRegex.exec(text)) !== null) {
+        if (match.index > lastIndex) {
+          const plainText = text.substring(lastIndex, match.index);
+          const p = document.createElement('p');
+          p.textContent = plainText;
+          container.appendChild(p);
+        }
+
+        const lang = match[1] || currentLanguage;
+        const codeContent = match[2];
+        codeBlockCounter++;
+        const blockId = `code-block-${codeBlockCounter}`;
+
+        const codeBlockHtml = document.createElement('div');
+        codeBlockHtml.className = 'code-block';
+        codeBlockHtml.innerHTML = `
+          <div class="code-header">
+            <span>${lang.toUpperCase()}</span>
+            <div class="code-controls">
+              ${lang === 'html' || currentLanguage === 'codepen' ? `<button class="code-btn" onclick="runLivePreview('${blockId}')">▶️ Ejecutar Live</button>` : ''}
+              <button class="code-btn" onclick="copyCode('${blockId}')">📋 Copiar</button>
+              <button class="code-btn" onclick="downloadCode('${blockId}', '${lang}')">💾 Descargar</button>
+            </div>
+          </div>
+          <div class="code-body" id="${blockId}">${escapeHtml(codeContent)}</div>
+        `;
+
+        container.appendChild(codeBlockHtml);
+        lastIndex = codeRegex.lastIndex;
+      }
+
+      if (lastIndex < text.length) {
+        const remainingText = text.substring(lastIndex);
+        const p = document.createElement('p');
+        p.textContent = remainingText;
+        container.appendChild(p);
+      }
+    }
+
+    function appendMessage(sender, text) {
+      const history = document.getElementById('chat-history');
+      const msgDiv = document.createElement('div');
+      msgDiv.className = `message ${sender}`;
+      msgDiv.innerHTML = `<div class="msg-bubble">${escapeHtml(text)}</div>`;
+      history.appendChild(msgDiv);
+      scrollToBottom();
+    }
+
+    function copyCode(id) {
+      navigator.clipboard.writeText(document.getElementById(id).innerText);
+      showToast("¡Código copiado!");
+    }
+
+    function downloadCode(id, lang) {
+      const text = document.getElementById(id).innerText;
+      const blob = new Blob([text], { type: 'text/plain' });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = `ezpack_module.${lang === 'python' ? 'py' : lang === 'cpp' ? 'cpp' : 'html'}`;
+      a.click();
+    }
+
+    function runLivePreview(id) {
+      const code = document.getElementById(id).innerText;
+      const iframe = document.getElementById('preview-iframe');
+      document.getElementById('preview-modal').style.display = 'flex';
+      iframe.srcdoc = code;
+    }
+
+    function closePreview() { document.getElementById('preview-modal').style.display = 'none'; }
+    function clearHistory() { document.getElementById('chat-history').innerHTML = ''; conversationHistory = []; }
+
+    function exportMarkdown() {
+      const text = conversationHistory.map(m => `**${m.role}:**\n${m.content}\n`).join('\n---\n');
+      const blob = new Blob([text], { type: 'text/markdown' });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = 'ezpack_omni_chat.md';
+      a.click();
+    }
+
+    function escapeHtml(str) { return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;"); }
+  </script>
+</body>
+</html>
