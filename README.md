@@ -6,7 +6,8 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"><img width="799" height="665" alt="Captura de pantalla 2026-08-30 004311" src="https://github.com/user-attachments/assets/20498c59-24a8-49dc-a4bc-d03dff0b2ffa" />
+
     <title>EZPack AI</title>
     <style>
         :root {
@@ -74,7 +75,8 @@
         .input-area { background-color: var(--panel-bg); border-top: 1px solid var(--border-color); padding: 15px 20px; display: flex; align-items: center; gap: 10px; }
         .icon-btn { background: var(--border-color); border: none; color: var(--text-color); width: 40px; height: 40px; border-radius: 8px; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 1.1rem; transition: background 0.2s; flex-shrink: 0; }
         .icon-btn:hover { background: #374151; }
-        .icon-btn.listening { background-color: #dc2626; color: white; animation: pulse 1.5s infinite; }
+        .icon-btn.listening { background-color: #dc2626; color: white; animation: pulse 1.5s infinite; }<img width="799" height="665" alt="Captura de pantalla 2026-08-30 004311" src="https://github.com/user-attachments/assets/29703dfb-a3f9-45e7-8106-5f978c817217" />
+
 
         input[type="text"] { flex: 1; min-width: 0; background: var(--bg-color); border: 1px solid var(--border-color); border-radius: 8px; padding: 12px 15px; color: var(--text-color); font-size: 0.95rem; outline: none; }
         input[type="text"]:focus { border-color: var(--accent-color); }
