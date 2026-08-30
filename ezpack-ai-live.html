@@ -1,0 +1,470 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="EZPack AI LIVE: asistente de voz y video en tiempo real.">
+    <meta name="theme-color" content="#0b0f19">
+    <title>EZPack AI LIVE</title>
+    <style>
+        :root {
+            --bg-color: #0b0f19;
+            --panel-bg: #111827;
+            --text-color: #f3f4f6;
+            --accent-color: #3b82f6;
+            --border-color: #1f2937;
+            --bubble-user: #1d4ed8;
+            --bubble-ai: #1f2937;
+            --danger-color: #dc2626;
+            --success-color: #10b981;
+            --muted-color: #9ca3af;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: system-ui, -apple-system, sans-serif; }
+        body { background-color: var(--bg-color); color: var(--text-color); display: flex; flex-direction: column; height: 100vh; overflow: hidden; }
+
+        header { background-color: var(--panel-bg); border-bottom: 1px solid var(--border-color); padding: 12px 20px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px; z-index: 10; }
+        .logo-area { display: flex; align-items: center; gap: 10px; }
+        .logo-box { font-size: 1.5rem; }
+        .title { font-weight: bold; font-size: 1.1rem; letter-spacing: 0.5px; }
+        .live-tag { background-color: var(--danger-color); color: white; font-size: 0.7rem; padding: 2px 6px; border-radius: 4px; font-weight: bold; text-transform: uppercase; animation: pulse 2s infinite; }
+
+        .controls-header { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+        .voice-select-header { background: var(--bg-color); color: var(--text-color); border: 1px solid var(--border-color); padding: 6px 10px; border-radius: 6px; font-size: 0.85rem; outline: none; }
+        
+        .util-btn { background: var(--border-color); border: 1px solid var(--border-color); color: var(--text-color); padding: 6px 12px; border-radius: 6px; font-size: 0.85rem; cursor: pointer; transition: all 0.2s; display: flex; align-items: center; gap: 5px; }
+        .util-btn:hover { border-color: var(--accent-color); }
+        .util-btn.active { background: var(--accent-color); color: white; border-color: var(--accent-color); }
+        .util-btn.danger-active { background: var(--danger-color); color: white; border-color: var(--danger-color); }
+
+        .live-stage-container { position: relative; width: 100%; height: 260px; background: #000; display: flex; align-items: center; justify-content: center; overflow: hidden; border-bottom: 1px solid var(--border-color); }
+        #cameraFeed { width: 100%; height: 100%; object-fit: cover; display: none; }
+        
+        .box-avatar-fallback { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; }
+        .box-avatar-emoji { font-size: 5rem; filter: drop-shadow(0 0 15px rgba(59, 130, 246, 0.4)); animation: floatBox 3s ease-in-out infinite; }
+        .box-avatar-status { font-size: 0.8rem; color: var(--muted-color); font-weight: 500; letter-spacing: 1px; text-transform: uppercase; }
+
+        @keyframes floatBox {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-8px); }
+        }
+
+        .main-content { flex: 1; display: flex; flex-direction: column; overflow: hidden; position: relative; }
+        .chat-container { flex: 1; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; gap: 12px; }
+
+        .message-wrapper { display: flex; flex-direction: column; max-width: 80%; }
+        .message-wrapper.ai { align-self: flex-start; }
+        .message-wrapper.user { align-self: flex-end; }
+        .message-meta { display: flex; align-items: center; gap: 6px; font-size: 0.7rem; color: var(--muted-color); margin-bottom: 3px; }
+        .message { padding: 12px 16px; border-radius: 12px; line-height: 1.5; font-size: 0.95rem; word-break: break-word; }
+        .message.ai { background-color: var(--bubble-ai); border-bottom-left-radius: 4px; }
+        .message.user { background-color: var(--bubble-user); color: #fff; border-bottom-right-radius: 4px; }
+
+        .input-area { background-color: var(--panel-bg); border-top: 1px solid var(--border-color); padding: 12px 20px; display: flex; align-items: center; gap: 10px; }
+        input[type="text"] { flex: 1; min-width: 0; background: var(--bg-color); border: 1px solid var(--border-color); border-radius: 8px; padding: 12px 15px; color: var(--text-color); font-size: 0.95rem; outline: none; }
+        input[type="text"]:focus { border-color: var(--accent-color); }
+        .send-btn { background-color: var(--accent-color); color: white; border: none; padding: 0 20px; height: 44px; border-radius: 8px; font-weight: bold; cursor: pointer; transition: background 0.2s; }
+        .send-btn:hover { background-color: #2563eb; }
+
+        .voice-indicator-banner { background: rgba(59, 130, 246, 0.1); border-top: 1px solid rgba(59, 130, 246, 0.3); color: var(--accent-color); font-size: 0.85rem; padding: 8px; text-align: center; font-weight: 500; display: none; }
+        .voice-indicator-banner.active { display: block; }
+
+        .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.75); z-index: 100; align-items: center; justify-content: center; }
+        .modal-overlay.active { display: flex; }
+        .modal-card { background: var(--panel-bg); border: 1px solid var(--border-color); padding: 24px; border-radius: 12px; text-align: center; max-width: 320px; width: 90%; box-shadow: 0 10px 25px rgba(0,0,0,0.5); }
+        .modal-title { font-size: 1.1rem; font-weight: bold; margin-bottom: 8px; }
+        .modal-desc { font-size: 0.85rem; color: var(--muted-color); margin-bottom: 20px; }
+        .modal-btn { width: 100%; margin-bottom: 10px; padding: 12px; border: none; border-radius: 8px; font-weight: 500; font-size: 0.9rem; cursor: pointer; transition: background 0.2s; display: flex; align-items: center; justify-content: center; gap: 8px; }
+        .modal-btn.pc { background: var(--accent-color); color: white; }
+        .modal-btn.pc:hover { background: #2563eb; }
+        .modal-btn.phone { background: var(--border-color); color: var(--text-color); }
+        .modal-btn.phone:hover { background: #374151; }
+        .modal-btn.cancel { background: transparent; color: var(--muted-color); margin-bottom: 0; margin-top: 5px; }
+
+        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+    </style>
+</head>
+<body>
+
+    <header>
+        <div class="logo-area">
+            <span class="logo-box">📦</span>
+            <span class="title">EZPack AI</span>
+            <span class="live-tag">LIVE</span>
+        </div>
+        <div class="controls-header">
+            <select id="voiceSelectHeader" class="voice-select-header" onchange="guardarVoz(this.value)">
+                <option value="">Cargando voces...</option>
+            </select>
+            <button class="util-btn" id="camBtn" onclick="toggleCamara()">📷 Cámara OFF</button>
+            <button class="util-btn" id="micBtn" onclick="toggleMicrofono()">🎙️ Micrófono OFF</button>
+        </div>
+    </header>
+
+    <main class="main-content">
+        <div class="live-stage-container">
+            <video id="cameraFeed" autoplay playsinline muted></video>
+            <div class="box-avatar-fallback" id="boxFallback">
+                <div class="box-avatar-emoji">📦</div>
+                <div class="box-avatar-status" id="boxStatusText">Cámara inactiva</div>
+            </div>
+        </div>
+
+        <div class="voice-indicator-banner" id="voiceBanner">
+            🎙️ Modo Voz LIVE activo. Apaga el micrófono para escribir.
+        </div>
+
+        <div class="chat-container" id="chatContainer"></div>
+
+        <div class="input-area" id="inputArea">
+            <input type="text" id="userInput" placeholder="Escribe tu mensaje aquí..." onkeypress="if(event.key==='Enter') procesarTexto()">
+            <button class="send-btn" id="sendBtn" onclick="procesarTexto()">Enviar</button>
+        </div>
+    </main>
+
+    <div class="modal-overlay" id="camModal">
+        <div class="modal-card">
+            <div class="modal-title">Selecciona la Cámara</div>
+            <div class="modal-desc">¿Qué cámara deseas utilizar para la transmisión?</div>
+            <button class="modal-btn pc" onclick="seleccionarCamara('pc')">💻 Cámara de la PC</button>
+            <button class="modal-btn phone" onclick="seleccionarCamara('celular')">📱 Cámara del Celular</button>
+            <button class="modal-btn cancel" onclick="cerrarModalCamara()">Cancelar</button>
+        </div>
+    </div>
+
+    <script>
+        let synth = window.speechSynthesis;
+        let recognition = null;
+        let camaraStream = null;
+        let micActivo = false;
+        let camaraActiva = false;
+        let listaVoces = [];
+
+        function cargarVoces() {
+            if (!synth) return;
+            listaVoces = synth.getVoices();
+            const select = document.getElementById('voiceSelectHeader');
+            select.innerHTML = '';
+            
+            const vocesEs = listaVoces.filter(v => v.lang.startsWith('es'));
+            const vocesAMostrar = vocesEs.length > 0 ? vocesEs : listaVoces;
+
+            vocesAMostrar.forEach(v => {
+                const opt = document.createElement('option');
+                opt.value = v.voiceURI;
+                opt.textContent = `${v.name} (${v.lang})`;
+                select.appendChild(opt);
+            });
+
+            const vozGuardada = localStorage.getItem('ezpack_live_voice');
+            if (vozGuardada) select.value = vozGuardada;
+        }
+
+        if (synth) {
+            cargarVoces();
+            if (synth.onvoiceschanged !== undefined) synth.onvoiceschanged = cargarVoces;
+        }
+
+        function guardarVoz(uri) {
+            localStorage.setItem('ezpack_live_voice', uri);
+        }
+
+        if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
+            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+            recognition = new SpeechRecognition();
+            recognition.lang = 'es-ES';
+            recognition.continuous = true;
+            recognition.interimResults = false;
+
+            recognition.onresult = function (event) {
+                if (!micActivo || (synth && synth.speaking)) return;
+
+                const transcript = event.results[event.results.length - 1][0].transcript.trim();
+                if (transcript) {
+                    agregarMensaje(transcript, 'user');
+                    responder(transcript);
+                }
+            };
+
+            recognition.onend = function () {
+                if (micActivo && (!synth || !synth.speaking)) {
+                    try { recognition.start(); } catch (err) {}
+                }
+            };
+        }
+
+        function toggleCamara() {
+            if (!camaraActiva) {
+                document.getElementById('camModal').classList.add('active');
+            } else {
+                apagarCamara();
+            }
+        }
+
+        function cerrarModalCamara() {
+            document.getElementById('camModal').classList.remove('active');
+        }
+
+        async function seleccionarCamara(tipo) {
+            cerrarModalCamara();
+            const videoEl = document.getElementById('cameraFeed');
+            const fallbackEl = document.getElementById('boxFallback');
+            const camBtn = document.getElementById('camBtn');
+
+            try {
+                const tempStream = await navigator.mediaDevices.getUserMedia({ video: true });
+                const devices = await navigator.mediaDevices.enumerateDevices();
+                const videoDevices = devices.filter(d => d.kind === 'videoinput');
+                tempStream.getTracks().forEach(t => t.stop());
+
+                let targetDeviceId = null;
+
+                if (tipo === 'pc') {
+                    const pcCam = videoDevices.find(d => {
+                        const name = d.label.toLowerCase();
+                        return !name.includes('phone') && 
+                               !name.includes('celular') && 
+                               !name.includes('droidcam') && 
+                               !name.includes('continuity') && 
+                               !name.includes('virtual');
+                    });
+                    if (pcCam) targetDeviceId = pcCam.deviceId;
+                    videoEl.style.transform = 'scaleX(-1)';
+                } else if (tipo === 'celular') {
+                    const phoneCam = videoDevices.find(d => {
+                        const name = d.label.toLowerCase();
+                        return name.includes('phone') || 
+                               name.includes('celular') || 
+                               name.includes('droidcam') || 
+                               name.includes('continuity') || 
+                               name.includes('virtual');
+                    });
+                    if (phoneCam) targetDeviceId = phoneCam.deviceId;
+                    videoEl.style.transform = 'scaleX(1)';
+                }
+
+                const constraints = targetDeviceId 
+                    ? { video: { deviceId: { exact: targetDeviceId } } } 
+                    : (tipo === 'pc' ? { video: { facingMode: "user" } } : { video: true });
+
+                camaraStream = await navigator.mediaDevices.getUserMedia(constraints);
+                videoEl.srcObject = camaraStream;
+                videoEl.style.display = 'block';
+                fallbackEl.style.display = 'none';
+                camBtn.classList.add('active');
+                camBtn.innerText = '📷 Cámara ON';
+                camaraActiva = true;
+            } catch (err) {
+                alert("No se pudo conectar con la cámara seleccionada.");
+            }
+        }
+
+        function apagarCamara() {
+            const videoEl = document.getElementById('cameraFeed');
+            const fallbackEl = document.getElementById('boxFallback');
+            const camBtn = document.getElementById('camBtn');
+
+            if (camaraStream) {
+                camaraStream.getTracks().forEach(track => track.stop());
+            }
+            videoEl.style.display = 'none';
+            fallbackEl.style.display = 'flex';
+            camBtn.classList.remove('active');
+            camBtn.innerText = '📷 Cámara OFF';
+            camaraActiva = false;
+        }
+
+        function toggleMicrofono() {
+            const micBtn = document.getElementById('micBtn');
+            const voiceBanner = document.getElementById('voiceBanner');
+            micActivo = !micActivo;
+
+            if (micActivo) {
+                if (synth) synth.cancel();
+                if (recognition) {
+                    try { recognition.start(); } catch (e) {}
+                }
+                micBtn.classList.add('danger-active');
+                micBtn.innerText = '🎙️ Micrófono ON';
+                voiceBanner.classList.add('active');
+            } else {
+                if (recognition) {
+                    try { recognition.abort(); } catch (e) {}
+                }
+                micBtn.classList.remove('danger-active');
+                micBtn.innerText = '🎙️ Micrófono OFF';
+                voiceBanner.classList.remove('active');
+            }
+        }
+
+        function procesarTexto() {
+            const input = document.getElementById('userInput');
+            const texto = input.value.trim();
+            if (!texto) return;
+
+            agregarMensaje(texto, 'user');
+            input.value = '';
+            responder(texto);
+        }
+
+        function responder(entradaTexto) {
+            let t = entradaTexto.toLowerCase().trim();
+            let respuesta = "";
+
+            if (t === 'acerca de' || t.includes('acerca de')) {
+                respuesta = "Soy EZPack AI LIVE creado por David, no requiero API keys, si quieres puedes probar mi version EZPack AI que es la original";
+            }
+            else if (t.includes('capital de paris') || t.includes('capital de francia')) {
+                respuesta = t.includes('paris') 
+                    ? "París en sí es la capital de Francia." 
+                    : "La capital de Francia es París.";
+            }
+            else if (t.includes('cuanto es') || t.includes('cuánto es')) {
+                try {
+                    let expr = t.replace(/cuánto es|cuanto es|\?/g, '').replace(/x/g, '*').replace(/[^0-9\+\-\*\/\.\(\)\s]/g, '').trim();
+                    if (expr) {
+                        let res = Function('"use strict";return (' + expr + ')')();
+                        respuesta = `El resultado de ${expr} es ${res}.`;
+                    } else {
+                        respuesta = "Por favor dime la operación matemática, por ejemplo: ¿Cuánto es 5 + 5?";
+                    }
+                } catch (e) {
+                    respuesta = "No pude realizar ese cálculo. Intenta con una operación sencilla como '¿Cuánto es 12 x 4?'.";
+                }
+            }
+            else if (t.includes('quien eres') || t.includes('quién eres')) {
+                respuesta = "Soy EZPack AI LIVE, una interfaz interactiva en tiempo real con soporte de audio y cámara que corre en tu navegador.";
+            }
+            else if (t.includes('que puedes hacer') || t.includes('qué puedes hacer')) {
+                respuesta = "Puedo escucharte por micrófono, hablarte por voz, mostrar tu cámara, realizar operaciones matemáticas y responder preguntas básicas.";
+            }
+            else if (t.includes('romper una botella') || t.includes('como romper')) {
+                respuesta = "Si necesitas reciclar vidrio de forma segura, mételo en una bolsa resistente o envoltorio grueso antes de aplicar presión para evitar fragmentos volantes.";
+            }
+            else if (t.includes('estoy triste')) {
+                respuesta = "Lamento que te sientas así. ¡Espero que tu día mejore pronto! 💙";
+            } 
+            else if (t.includes('estoy feliz') || t.includes('estoy contento')) {
+                respuesta = "¡Qué excelente noticia! Me alegra mucho que te sientas así. 🎉";
+            } 
+            else if (t.includes('estoy enojado') || t.includes('estoy enojada')) {
+                respuesta = "Respirar profundo unos segundos puede ayudar. Tómate las cosas con calma. 🧘";
+            } 
+            else if (t.includes('estoy asustado') || t.includes('estoy asustada')) {
+                respuesta = "Tranquilo, todo estará bien. Estoy aquí si necesitas conversar.";
+            }
+            else if (t.includes('estoy en')) {
+                if (t.includes('peligro') || t.includes('emergencia') || t.includes('hospital') || t.includes('problema')) {
+                    respuesta = "Si te encuentras en una situación de peligro o emergencia grave, por favor contacta de inmediato a las autoridades o servicios de emergencia locales.";
+                } else if (t.includes('vacaciones') || t.includes('fiesta') || t.includes('viaje') || t.includes('buen')) {
+                    respuesta = "¡Qué excelente lugar para estar! Disfruta mucho de ese momento y pásala genial. 🎉";
+                } else {
+                    respuesta = "Entendido. Si necesitas ayuda o consejos sobre la situación en la que te encuentras, ¡dímelo!";
+                }
+            }
+            else if (t.includes('desinstalar')) {
+                respuesta = "¡No me desinstales! 📦 Prometo seguir mejorando para ayudarte en lo que necesites.";
+            }
+            else if (t.includes('me voy a cambiar a') || t.includes('voy a cambiar a')) {
+                respuesta = "¡Entendido! Aunque pruebes otras alternativas, recuerda que yo siempre estaré disponible directamente en tu navegador.";
+            }
+            else if (t.includes('ezpack ai real') || t.includes('eres real')) {
+                respuesta = "¡Así es! Soy la versión LIVE oficial de EZPack AI enfocada en audio y visualización.";
+            }
+            else if (t.includes('que dice') || t.includes('qué dice')) {
+                if (t.includes('perro')) respuesta = "El perro dice: ¡Guau guau! 🐶";
+                else if (t.includes('gato')) respuesta = "El gato dice: ¡Miau miau! 🐱";
+                else if (t.includes('vaca')) respuesta = "La vaca dice: ¡Muuu! 🐮";
+                else if (t.includes('pato')) respuesta = "El pato dice: ¡Cua cua! 🦆";
+                else if (t.includes('gallo')) respuesta = "El gallo dice: ¡Kikiriki! 🐓";
+                else respuesta = "¡Ese animal tiene un sonido muy genial! 🐾";
+            }
+            else if (t.includes('que es una ia') || t.includes('qué es una ia') || t.includes('que es la ia')) {
+                respuesta = "Una IA (Inteligencia Artificial) es un sistema informático diseñado para simular capacidades humanas como aprender, procesar lenguaje y resolver problemas.";
+            }
+            else if (t.includes('diferencia entre') || t.includes('diferencias entre')) {
+                respuesta = "La diferencia entre distintas IAs radica en su arquitectura, la cantidad de datos con los que fueron entrenadas, su velocidad y si se ejecutan en servidores o localmente en el navegador.";
+            }
+            else if (t.includes('gracias')) {
+                respuesta = "¡De nada! Estoy para ayudarte en lo que necesites. 😊";
+            }
+            else if (t.includes('te amo')) {
+                respuesta = "¡Muchas gracias! Yo también disfruto mucho ayudarte. 💙";
+            }
+            else if (t.includes('te odio')) {
+                respuesta = "Lamento escuchar eso. Prometo seguir mejorando para brindarte una mejor experiencia.";
+            }
+            else if (/^no+$/i.test(t) || t === 'no') {
+                respuesta = "Entendido, no hay problema.";
+            }
+            else if (/^s[ií]+$/i.test(t) || t === 'si' || t === 'sí') {
+                respuesta = "¡Excelente! Sigamos adelante.";
+            }
+            else if (t.includes('hora')) {
+                respuesta = `Son las ${new Date().toLocaleTimeString('es-ES', {hour: '2-digit', minute:'2-digit'})}.`;
+            } else if (t.includes('fecha') || t.includes('día') || t.includes('dia')) {
+                respuesta = `Hoy es ${new Date().toLocaleDateString('es-ES', { weekday: 'long', month: 'long', day: 'numeric' })}.`;
+            } else if (t.includes('hola') || t.includes('hey')) {
+                respuesta = "¡Hola! Interfaz en vivo lista.";
+            } 
+            else {
+                respuesta = `Mensaje recibido: "${entradaTexto}".`;
+            }
+
+            setTimeout(() => {
+                agregarMensaje(respuesta, 'ai');
+                hablar(respuesta);
+            }, 300);
+        }
+
+        function hablar(texto) {
+            if (!synth) return;
+            synth.cancel();
+
+            let utterThis = new SpeechSynthesisUtterance(texto);
+            utterThis.lang = 'es-ES';
+
+            const uriGuardada = document.getElementById('voiceSelectHeader').value;
+            if (uriGuardada) {
+                const voz = listaVoces.find(v => v.voiceURI === uriGuardada);
+                if (voz) utterThis.voice = voz;
+            }
+
+            utterThis.onstart = function () {
+                if (recognition) {
+                    try { recognition.abort(); } catch (e) {}
+                }
+            };
+
+            utterThis.onend = function () {
+                if (micActivo && recognition) {
+                    try { recognition.start(); } catch (e) {}
+                }
+            };
+
+            synth.speak(utterThis);
+        }
+
+        function agregarMensaje(texto, tipo) {
+            const container = document.getElementById('chatContainer');
+            const wrapper = document.createElement('div');
+            wrapper.className = `message-wrapper ${tipo}`;
+
+            const meta = document.createElement('div');
+            meta.className = 'message-meta';
+            meta.innerText = tipo === 'ai' ? '📦 EZPack AI LIVE' : 'Tú';
+
+            const msg = document.createElement('div');
+            msg.className = `message ${tipo}`;
+            msg.innerText = texto;
+
+            wrapper.appendChild(meta);
+            wrapper.appendChild(msg);
+            container.appendChild(wrapper);
+            container.scrollTop = container.scrollHeight;
+        }
+
+        agregarMensaje("EZPack AI LIVE listo. Puedes escribir o usar los botones de voz/cámara.", "ai");
+    </script>
+</body>
+</html>
