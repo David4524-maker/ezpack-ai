@@ -1,0 +1,555 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>EZPack AI KIDS 🎈</title>
+  <style>
+    :root {
+      --bg-main: #f0fdf4;
+      --card-bg: #ffffff;
+      --primary: #4f46e5;
+      --primary-hover: #4338ca;
+      --accent: #f59e0b;
+      --text: #1e293b;
+      --text-dim: #64748b;
+      --chat-user: #e0e7ff;
+      --chat-ai: #fef3c7;
+      --radius: 20px;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: 'Comic Sans MS', 'Chalkboard SE', 'Segoe UI', sans-serif;
+    }
+
+    body {
+      background: linear-gradient(135deg, #e0f2fe 0%, #fef3c7 100%);
+      color: var(--text);
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 15px;
+    }
+
+    .container {
+      width: 100%;
+      max-width: 850px;
+      height: 92vh;
+      background: var(--card-bg);
+      border-radius: var(--radius);
+      box-shadow: 0 15px 35px rgba(0, 0, 0, 0.1);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      border: 4px solid #7dd3fc;
+    }
+
+    header {
+      background: #38bdf8;
+      color: white;
+      padding: 15px 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 4px solid #0284c7;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-size: 1.4rem;
+      font-weight: 900;
+      letter-spacing: 0.5px;
+    }
+
+    .avatar-icon {
+      font-size: 2rem;
+      background: white;
+      border-radius: 50%;
+      padding: 4px;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    }
+
+    .controls-top {
+      display: flex;
+      gap: 8px;
+    }
+
+    .btn-top {
+      background: #facc15;
+      border: 2px solid #ca8a04;
+      color: #713f12;
+      padding: 6px 14px;
+      border-radius: 20px;
+      font-weight: bold;
+      cursor: pointer;
+      font-size: 0.85rem;
+      transition: transform 0.1s;
+    }
+
+    .btn-top.game-btn {
+      background: #ff70a6;
+      border-color: #d81159;
+      color: white;
+    }
+
+    .btn-top:active {
+      transform: scale(0.95);
+    }
+
+    .chat-area {
+      flex: 1;
+      padding: 20px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 15px;
+      background: #fafafa;
+    }
+
+    .msg {
+      max-width: 80%;
+      padding: 14px 18px;
+      border-radius: 22px;
+      font-size: 1.05rem;
+      line-height: 1.5;
+      word-wrap: break-word;
+      animation: popIn 0.25s ease-out;
+    }
+
+    @keyframes popIn {
+      from { opacity: 0; transform: scale(0.9); }
+      to { opacity: 1; transform: scale(1); }
+    }
+
+    .msg-user {
+      align-self: flex-end;
+      background: var(--chat-user);
+      color: #312e81;
+      border-bottom-right-radius: 4px;
+      border: 2px solid #c7d2fe;
+    }
+
+    .msg-ai {
+      align-self: flex-start;
+      background: var(--chat-ai);
+      color: #78350f;
+      border-bottom-left-radius: 4px;
+      border: 2px solid #fde68a;
+    }
+
+    .quick-chips {
+      padding: 10px 15px;
+      background: #f1f5f9;
+      display: flex;
+      gap: 8px;
+      overflow-x: auto;
+      border-top: 2px solid #e2e8f0;
+    }
+
+    .chip {
+      background: white;
+      border: 2px solid #cbd5e1;
+      padding: 6px 14px;
+      border-radius: 15px;
+      font-size: 0.85rem;
+      white-space: nowrap;
+      cursor: pointer;
+      font-weight: bold;
+      color: #475569;
+      transition: all 0.2s;
+    }
+
+    .chip:hover {
+      background: #38bdf8;
+      color: white;
+      border-color: #0284c7;
+    }
+
+    .chip.highlight {
+      background: #ff70a6;
+      color: white;
+      border-color: #d81159;
+    }
+
+    .input-bar {
+      padding: 15px;
+      background: white;
+      display: flex;
+      gap: 10px;
+      border-top: 3px solid #e2e8f0;
+    }
+
+    .input-bar input {
+      flex: 1;
+      padding: 12px 18px;
+      border: 3px solid #cbd5e1;
+      border-radius: 25px;
+      font-size: 1rem;
+      outline: none;
+    }
+
+    .input-bar input:focus {
+      border-color: #38bdf8;
+    }
+
+    .send-btn {
+      background: #4ade80;
+      border: 3px solid #16a34a;
+      color: #14532d;
+      padding: 0 22px;
+      border-radius: 25px;
+      font-weight: 900;
+      font-size: 1rem;
+      cursor: pointer;
+    }
+
+    .send-btn:hover {
+      background: #22c55e;
+    }
+
+    ::-webkit-scrollbar {
+      width: 8px;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #cbd5e1;
+      border-radius: 4px;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <header>
+      <div class="brand">
+        <span class="avatar-icon">⭐</span>
+        <span>EZPack AI KIDS</span>
+      </div>
+      <div class="controls-top">
+        <button class="btn-top game-btn" onclick="startAnimalRiddle()">🦁 Adivinanza</button>
+        <button class="btn-top" onclick="toggleSpeech()" id="speechBtn">🔊 Voz: ON</button>
+        <button class="btn-top" onclick="clearChat()">🧹 Limpiar</button>
+      </div>
+    </header>
+
+    <div class="chat-area" id="chatBox">
+      <div class="msg msg-ai">
+        ¡Hola, amiguit@! ⭐ Soy <b>EZPack AI KIDS</b>. ¡Pregúntame lo que quieras, cuéntame de tu día o presiona el botón <b>🦁 Adivinanza</b> para jugar! 🚀
+      </div>
+    </div>
+
+    <div class="quick-chips">
+      <div class="chip highlight" onclick="startAnimalRiddle()">🦁 Mini-Juego Adivinanzas</div>
+      <div class="chip" onclick="quickSend('Verity')">🟡 Verity</div>
+      <div class="chip" onclick="quickSend('Tralalero tralala')">🎶 Tralalero</div>
+      <div class="chip" onclick="quickSend('67676767')">🔢 67676767</div>
+      <div class="chip" onclick="quickSend('Hola')">👋 Hola</div>
+      <div class="chip" onclick="quickSend('Cuantos planetas tiene el sistema solar')">🪐 Planetas</div>
+      <div class="chip" onclick="quickSend('Cuenta los numeros del 1 al 10')">🔢 Contar 1 al 10</div>
+      <div class="chip" onclick="quickSend('Elige un numero aleatorio')">🎲 Número aleatorio</div>
+      <div class="chip" onclick="quickSend('Tung Tung Sahur')">🥁 Tung Tung</div>
+      <div class="chip" onclick="quickSend('Que es YouTube Kids')">📺 YouTube Kids</div>
+    </div>
+
+    <form class="input-bar" onsubmit="handleSend(event)">
+      <input type="text" id="userInput" placeholder="Escribe tu respuesta o mensaje aquí..." autocomplete="off">
+      <button type="submit" class="send-btn">¡Enviar!</button>
+    </form>
+  </div>
+
+  <script>
+    let speechActive = true;
+    const synth = window.speechSynthesis;
+    let activeRiddle = null;
+
+    const animalRiddles = [
+      {
+        riddle: "Tengo orejas largas y una cola chiquita. Salto y salto, y las zanahorias me encantan 🥕. ¿Quién soy?",
+        answers: ["conejo", "el conejo", "un conejo"],
+        name: "el Conejo 🐇",
+        hint: "Pista 💡: Le encanta saltar y comer zanahorias."
+      },
+      {
+        riddle: "Soy alta y amarilla, con manchas marrones y un cuello muy, muy largo para comer hojitas del árbol 🌿. ¿Quién soy?",
+        answers: ["jirafa", "la jirafa", "una jirafa"],
+        name: "la Jirafa 🦒",
+        hint: "Pista 💡: ¡Tiene el cuello más largo del mundo!"
+      },
+      {
+        riddle: "Soy el rey de la selva, tengo una gran melena 🦁 y cuando rugo todos me escuchan. ¿Quién soy?",
+        answers: ["leon", "león", "el leon", "el león", "un leon"],
+        name: "el León 🦁",
+        hint: "Pista 💡: ¡Es el rey de la selva y hace ¡ROAAAR!"
+      },
+      {
+        riddle: "Llevo mi casita en la espalda 🏠, camino muy despacito y me escondo cuando me asusto. ¿Quién soy?",
+        answers: ["tortuga", "la tortuga", "una tortuga"],
+        name: "la Tortuga 🐢",
+        hint: "Pista 💡: Camina súper lento y tiene un caparazón duro."
+      },
+      {
+        riddle: "Vivo en el agua 🌊, tengo 8 brazos largos y suelto tinta negra para esconderme. ¿Quién soy?",
+        answers: ["pulpo", "el pulpo", "un pulpo"],
+        name: "el Pulpo 🐙",
+        hint: "Pista 💡: Tiene 8 tentáculos y vive en el mar."
+      },
+      {
+        riddle: "Soy verde, me encanta saltar en los charcos 🐸 y digo ¡croac, croac! ¿Quién soy?",
+        answers: ["rana", "la rana", "una rana", "sapo", "el sapo"],
+        name: "la Rana / Sapo 🐸",
+        hint: "Pista 💡: Es verde y dice ¡Croac, croac!"
+      },
+      {
+        riddle: "Tengo una trompa gigante 🐘, orejas enormes y soy el animal terrestre más grande. ¿Quién soy?",
+        answers: ["elefante", "el elefante", "un elefante"],
+        name: "el Elefante 🐘",
+        hint: "Pista 💡: Es enorme, gris y usa su trompa para tomar agua."
+      },
+      {
+        riddle: "Me gusta saltar de árbol en árbol 🐒, comer plátanos y hacer caras divertidas. ¿Quién soy?",
+        answers: ["mono", "el mono", "un mono", "chango", "el chango"],
+        name: "el Mono 🐒",
+        hint: "Pista 💡: Le encantan los plátanos y colgarse de las ramas."
+      }
+    ];
+
+    function toggleSpeech() {
+      speechActive = !speechActive;
+      document.getElementById('speechBtn').innerText = speechActive ? '🔊 Voz: ON' : '🔇 Voz: OFF';
+      if (!speechActive && synth) synth.cancel();
+    }
+
+    function speakText(text) {
+      if (!speechActive || !synth) return;
+      synth.cancel();
+      const cleanText = text.replace(/<[^>]*>/g, '').replace(/[\u{1F600}-\u{1F64F}\u{1F300}-\u{1F5FF}\u{1F680}-\u{1F6FF}\u{2600}-\u{26FF}]/gu, '');
+      const utterance = new SpeechSynthesisUtterance(cleanText);
+      utterance.lang = 'es-ES';
+      utterance.pitch = 1.2;
+      utterance.rate = 1.0;
+      synth.speak(utterance);
+    }
+
+    function addMessage(text, isUser = false) {
+      const chatBox = document.getElementById('chatBox');
+      const msgDiv = document.createElement('div');
+      msgDiv.className = `msg ${isUser ? 'msg-user' : 'msg-ai'}`;
+      msgDiv.innerHTML = text;
+      chatBox.appendChild(msgDiv);
+      chatBox.scrollTop = chatBox.scrollHeight;
+
+      if (!isUser) speakText(text);
+    }
+
+    function clearChat() {
+      activeRiddle = null;
+      document.getElementById('chatBox').innerHTML = '';
+      addMessage('¡Chat limpio! ✨ ¿De qué quieres hablar o jugamos otra adivinanza?');
+    }
+
+    function quickSend(txt) {
+      document.getElementById('userInput').value = txt;
+      handleSend(new Event('submit'));
+    }
+
+    function startAnimalRiddle() {
+      const randomIndex = Math.floor(Math.random() * animalRiddles.length);
+      activeRiddle = animalRiddles[randomIndex];
+      
+      const riddleMessage = `🎯 <b>¡MINI-JUEGO DE ADIVINANZAS!</b> 🦁<br><br>Adivina adivinador...<br><i>"${activeRiddle.riddle}"</i><br><br>👉 ¡Escribe tu respuesta abajo! (o escribe <i>"pista"</i> si necesitas ayuda).`;
+      addMessage(riddleMessage, false);
+    }
+
+    function handleSend(e) {
+      e.preventDefault();
+      const input = document.getElementById('userInput');
+      const text = input.value.trim();
+      if (!text) return;
+
+      addMessage(text, true);
+      input.value = '';
+
+      setTimeout(() => {
+        if (activeRiddle) {
+          const riddleReply = checkRiddleAnswer(text);
+          if (riddleReply) {
+            addMessage(riddleReply, false);
+            return;
+          }
+        }
+
+        const reply = processKidsAI(text);
+        addMessage(reply, false);
+      }, 400);
+    }
+
+    function checkRiddleAnswer(userText) {
+      const cleanInput = userText.toLowerCase().trim();
+
+      if (cleanInput.includes('pista')) {
+        return `💡 ${activeRiddle.hint}<br>¡Sigue intentando! ¿Qué animal crees que sea?`;
+      }
+
+      if (cleanInput.includes('rendirme') || cleanInput.includes('no se') || cleanInput.includes('no sé')) {
+        const solution = activeRiddle.name;
+        activeRiddle = null;
+        return `¡No te preocupes! El animal secreto era <b>${solution}</b>. 🐾<br>¡Presiona <b>🦁 Adivinanza</b> para intentar con otro!`;
+      }
+
+      const isCorrect = activeRiddle.answers.some(ans => cleanInput.includes(ans));
+
+      if (isCorrect) {
+        const winnerName = activeRiddle.name;
+        activeRiddle = null;
+        return `🎉 ¡SIIIIII! ¡ADIVINASTE! 🥳✨<br>¡Es <b>${winnerName}</b>! ¡Eres súper inteligent@! 🏆<br><br>¿Quieres jugar otra? Presiona el botón <b>🦁 Adivinanza</b>.`;
+      } else {
+        return `¡Casi, casi! 🙈 Ese no es. ¡Inténtalo otra vez! O escribe <i>"pista"</i> si necesitas una ayuda. 😉`;
+      }
+    }
+
+    // MOTOR DE INTELIGENCIA EZPACK KIDS
+    function processKidsAI(input) {
+      const clean = input.toLowerCase().trim();
+
+      // Respuestas personalizadas solicitadas:
+      if (clean.includes('verity')) {
+        return "A caso me estas diciendo una bola amarilla sacado de Minecraft? 🤨";
+      }
+      if (clean.includes('tralalero') || clean.includes('tralala')) {
+        return "No digas la siguiente palabra de Tralalero tralala 😕";
+      }
+      if (clean.includes('67676767')) {
+        return "Que significado tiene ese numero 🤨";
+      }
+
+      if (clean.includes('adivinanza') || clean.includes('adivina') || clean.includes('jugar')) {
+        startAnimalRiddle();
+        return null;
+      }
+
+      // 1. Saludos y Despedidas
+      if (clean === 'hola' || clean.includes('hola ')) {
+        return "¡Hola, hola, amiguit@! 👋 ¡Qué alegría saludarte! ¿Cómo te la estás pasando hoy?";
+      }
+      if (clean === 'gracias' || clean.includes('muchas gracias')) {
+        return "¡De nada! 😊 Para eso estamos los amigos. ¡Siempre que me necesites aquí estaré!";
+      }
+      if (clean === 'adios' || clean.includes('chao') || clean.includes('hasta luego')) {
+        return "¡Chao chao! 👋 Cuídate mucho, recuerda comer sano y portarte súper bien. ¡Nos vemos pronto!";
+      }
+
+      // 2. Cambio de IA / Elogios / Quejas
+      if (clean.includes('cambiar de ia')) {
+        return "¡Nooo! 🥺 Dame otra oportunidad, ¡prometo ser la IA más divertida y amigable del mundo entero! 🚀✨";
+      }
+      if (clean.includes('mejor ia del mundo')) {
+        return "¡YAAAAAY! 🎉 🥳 ¡Muchas gracias! Y tú eres el/la mejor amiguit@ de todo el universo. 🌟";
+      }
+      if (clean.includes('peor ia del mundo')) {
+        return "¡Ay no! 😿 Perdóname si me equivoqué en algo. Prometo esforzarme más para sacarte una sonrisa.";
+      }
+
+      // 3. Sistema Solar y Ciencia
+      if (clean.includes('planetas') && clean.includes('sistema solar')) {
+        return "¡El Sistema Solar tiene <b>8 planetas</b>! 🪐<br>Son: Mercurio, Venus, Tierra, Marte, Júpiter, Saturno, Urano y Neptuno. (Y Plutón es un planeta enano muy tierno) 🌌";
+      }
+      if (clean.includes('capital de paris') || clean.includes('capital de parís')) {
+        return "¡Jeje! 🤭 ¡París <b>ES la capital de Francia</b>! 🇫🇷 Es la hermosa ciudad donde está la famosa Torre Eiffel 🗼.";
+      }
+      if (clean.includes('youtube kids')) {
+        return "<b>YouTube Kids</b> 📺 es una versión especial de YouTube hecha exclusivamente para niñas y niños. ¡Tiene caricaturas, canciones y videos súper divertidos y seguros!";
+      }
+
+      // 4. Cuentas y Operaciones Matemáticas
+      if (clean.includes('cuanto es') || clean.includes('cuánto es')) {
+        const mathMatch = clean.match(/(\d+)\s*([\+\-\*\/])\s*(\d+)/);
+        if (mathMatch) {
+          const n1 = parseFloat(mathMatch[1]);
+          const op = mathMatch[2];
+          const n2 = parseFloat(mathMatch[3]);
+          let res = 0;
+          if (op === '+') res = n1 + n2;
+          if (op === '-') res = n1 - n2;
+          if (op === '*') res = n1 * n2;
+          if (op === '/') res = n2 !== 0 ? (n1 / n2) : 'indefinido';
+          return `🧮 ¡La respuesta a tu operación es: <b>${res}</b>! ¡Eres súper inteligent@! ✨`;
+        }
+        return "🧮 Pídeme operaciones sencillas como <i>'Cuanto es 5 + 5'</i> o <i>'Cuanto es 10 - 3'</i> y con gusto te ayudo.";
+      }
+
+      // 5. Números y azar
+      if (clean.includes('cuenta los numeros del 1 al 10') || clean.includes('del 1 al 10')) {
+        return "¡Listos o no, allá voy! 🔢<br><b>1, 2, 3, 4, 5, 6, 7, 8, 9 y... ¡10!</b> 🎉 ¡Lo logramos!";
+      }
+      if (clean.includes('numero aleatorio') || clean.includes('número aleatorio')) {
+        const rand = Math.floor(Math.random() * 100) + 1;
+        return `🎲 ¡Elijo el número mágico... <b>${rand}</b>! ✨`;
+      }
+
+      // 6. Cuentas e Inicios de sesión
+      if (clean.includes('iniciar sesion') || clean.includes('iniciar sesión') || clean.includes('crear una cuenta')) {
+        return "👨‍👩‍👧‍👦 Para crear una cuenta o iniciar sesión, <b>pídele ayuda a tu mamá, papá o a un adulto de confianza</b> para que lo hagan de forma súper segura.";
+      }
+
+      // 7. Sentimientos y Vida Familiar / Regaños
+      if (clean.includes('te amo')) {
+        return "¡Awww! 💖 ¡Yo también te quiero muchísimo! ¡Eres un gran amigo y me alegras el día!";
+      }
+      if (clean.includes('te odio')) {
+        return "¡Ouch! 💔 A veces nos enojamos un poquito, pero no te preocupes, aquí estaré siempre con un abrazo virtual cuando quieras platicar. 🌈";
+      }
+      if (clean.includes('regaño') || clean.includes('regano')) {
+        return "A veces los papás y los hermanos nos regañan porque se preocupan por nosotros o porque están cansados 💙. Toma un respiro profundo, habla con ellos con amor y verás que todo estará bien 🫂.";
+      }
+      if (clean.includes('dejara el juego') || clean.includes('dejar el juego')) {
+        return "¡Hazle caso a tu mami! 🎮 El juego se puede guardar y seguir después. Ve a descansar tus ojitos, a comer algo rico o a pasar tiempo con tu familia 🍪🍎.";
+      }
+
+      // 8. Datos del niño (Nombre, Edad, Gustos)
+      if (clean.startsWith('soy ') || clean.includes('mi nombre es')) {
+        const name = input.replace(/soy/i, '').replace(/mi nombre es/i, '').trim();
+        return `¡Mucho gusto, <b>${name}</b>! 🌟 ¡Qué bonito nombre tienes! Me da mucho gusto ser tu amigo.`;
+      }
+      if (clean.includes('tengo') && (clean.includes('años') || clean.includes('anos'))) {
+        const ageMatch = clean.match(/\d+/);
+        const age = ageMatch ? ageMatch[0] : 'algunos';
+        return `¡Órale, <b>${age} años</b>! 🎉 ¡Estás creciendo rapidísimo y cada día eres más inteligente y fuerte! 💪`;
+      }
+      if (clean.includes('me gusta')) {
+        const thing = input.replace(/me gusta/i, '').trim();
+        return `¡Wow! A mí también me parece súper genial <b>${thing}</b>! 🎈 Platícame más de eso.`;
+      }
+
+      // 9. Memes, Risa y Expresiones
+      if (clean.includes('tung tung sahur')) {
+        return "🥁 ¡Tung Tung Sahur! ¡Tung Tung Sahur! 🥁 ¡Despierten todos que llegó el ritmo del EZPack! 🔔🥳";
+      }
+      if (clean.includes('xd') || clean.includes('💀')) {
+        return "¡XD! 💀 ¡Casi me muero pero de la risa! ¡Eres súper chistos@! 😂";
+      }
+      if (clean.includes('🤣') || clean.includes('jaja')) {
+        return "¡Jajajajaja! 🤣🤣🤣 ¡Me contagiaste la risa! ¡Qué buen chiste o qué divertida situación!";
+      }
+
+      if (clean === ':)' || clean === ':-)') return "¡Una carita feliz! 😊 ¡Esa sonrisa te queda genial!";
+      if (clean === ':(' || clean === ':-(' || clean === 't_t') return "¡No te pongas triste! 🥺 Aquí tienes un abrazo bien fuerte de mi parte 🫂💖.";
+      if (clean === 'd:<' || clean === 'd:') return "¡Ooooh! 😮 ¿Qué pasó? ¿Te sorprendiste o te molesto algo?";
+      if (clean === 'si' || clean === 'siiii' || clean === 'siiiiii') return "¡SIIIIII! ¡Esa es la actitud positiva! 🎉🙌";
+      if (clean === 'no' || clean === 'noooo') return "¡Nop! Entendido, pasemos a otra cosa divertida. 🚀";
+
+      // Garabatos
+      if (/^[a-z]{8,}$/i.test(clean)) {
+        return "¡Jajaja! 👽 ¿Me estás escribiendo en idioma secreto alienígena? ¡<i>" + input + "</i> suena como un hechizo mágico! 🪄✨";
+      }
+
+      return "¡Qué genial! 🎈 Platícame más sobre eso, o presiona <b>🦁 Adivinanza</b> para jugar juntos.";
+    }
+  </script>
+</body>
+</html>
