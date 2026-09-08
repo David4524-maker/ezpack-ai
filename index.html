@@ -614,579 +614,384 @@
 
             const meta = document.createElement('div');
             meta.className = 'message-meta';
-            meta.innerHTML = `${tipo === 'ai' ? `<span>${avatar || '📦'}</span>` : ''}<span>${horaStr}</span>`;
-            wrapper.appendChild(meta);
+            meta.innerHTML = `<span>${avatar}</span> <span>${horaStr}</span>`;
 
             const msgDiv = document.createElement('div');
             msgDiv.className = `message ${tipo}`;
             msgDiv.innerHTML = contenidoFinal;
+
+            wrapper.appendChild(meta);
             wrapper.appendChild(msgDiv);
 
             if (tipo === 'ai') {
                 const actions = document.createElement('div');
                 actions.className = 'msg-actions';
-
-                const audioBtn = document.createElement('button');
-                audioBtn.className = 'speak-msg-btn';
-                audioBtn.innerHTML = '🔊 Escuchar';
-                audioBtn.setAttribute('aria-label', 'Escuchar este mensaje');
-                audioBtn.onclick = function () { hablarTexto(this); };
-                actions.appendChild(audioBtn);
-
-                const stopBtn = document.createElement('button');
-                stopBtn.className = 'stop-msg-btn';
-                stopBtn.innerHTML = '⏹️ Detener';
-                stopBtn.setAttribute('aria-label', 'Detener lectura en voz alta');
-                stopBtn.onclick = detenerVoz;
-                actions.appendChild(stopBtn);
-
-                const copyBtn = document.createElement('button');
-                copyBtn.className = 'copy-msg-btn';
-                copyBtn.innerHTML = '📋 Copiar';
-                copyBtn.setAttribute('aria-label', 'Copiar este mensaje');
-                copyBtn.onclick = function () { copiarTexto(this); };
-                actions.appendChild(copyBtn);
-
+                actions.innerHTML = `
+                    <button class="speak-msg-btn" onclick="hablarTexto(this)" title="Escuchar">🔊 Leer</button>
+                    <button class="stop-msg-btn" onclick="detenerVoz()" title="Detener voz">⏹️ Parar</button>
+                    <button class="copy-msg-btn" onclick="copiarTexto(this)" title="Copiar texto">📋 Copiar</button>
+                `;
                 wrapper.appendChild(actions);
             }
 
             return wrapper;
         }
 
-        function agregarMensaje(texto, tipo, esHTML = false, guardar = true) {
-            const contenidoFinal = esHTML ? texto : escaparHTML(texto);
-            const ahora = new Date();
-            const horaStr = horaCorta(ahora);
-            const avatar = tipo === 'ai' ? AVATARES[modoActual] : null;
-
+        function agregarMensaje(texto, tipo, ts = Date.now(), guardar = true) {
             const container = document.getElementById('chatContainer');
-            const alFinalAntes = estaAlFinal();
+            const estAba = estaAlFinal();
+            const fechaObj = new Date(ts);
+            const horaStr = horaCorta(fechaObj);
 
-            insertarSeparadorFechaSiCorresponde(ahora);
-            const wrapper = crearWrapperMensaje(contenidoFinal, tipo, horaStr, avatar);
+            insertarSeparadorFechaSiCorresponde(fechaObj);
+
+            const avatar = tipo === 'user' ? '👤 Tú' : `${AVATARES[modoActual] || '📦'} EZPack`;
+            const wrapper = crearWrapperMensaje(escaparHTML(texto), tipo, horaStr, avatar);
+
             container.appendChild(wrapper);
 
-            if (alFinalAntes || tipo === 'user') {
-                container.scrollTop = container.scrollHeight;
-            } else {
+            if (guardar) {
+                historial.push({ texto, tipo, timestamp: ts, modo: modoActual });
+                guardarHistorial();
+            }
+
+            if (estAba) {
+                irAlFinal();
+            } else if (tipo === 'ai') {
                 const btn = document.getElementById('scrollBottomBtn');
-                const badge = document.getElementById('scrollBadge');
                 btn.classList.add('show');
-                const n = (parseInt(badge.textContent, 10) || 0) + 1;
+                const badge = document.getElementById('scrollBadge');
+                const n = (parseInt(badge.textContent || '0', 10) || 0) + 1;
                 badge.textContent = n;
                 badge.classList.add('show');
             }
 
-            if (guardar) {
-                historial.push({ tipo, contenido: contenidoFinal, hora: horaStr, avatar, fecha: ahora.toDateString() });
-                if (historial.length > 150) historial = historial.slice(-150);
-                localStorage.setItem(LS.historial, JSON.stringify(historial));
-            }
-
-            return wrapper;
-        }
-
-        document.getElementById('chatContainer').addEventListener('scroll', () => {
-            if (estaAlFinal()) irAlFinal();
-        });
-
-        function confirmarLimpiarChat() {
-            if (!confirm('¿Seguro que quieres borrar toda la conversación? No se puede deshacer.')) return;
-            limpiarChat();
-        }
-
-        function limpiarChat() {
-            detenerVoz();
-            historial = [];
-            ultimaFechaSeparador = '';
-            localStorage.removeItem(LS.historial);
-            document.getElementById('chatContainer').innerHTML = '';
-            mostrarSaludoInicial(false);
-            mostrarToast('Conversación borrada');
-        }
-
-        function exportarChat() {
-            if (historial.length === 0) {
-                mostrarToast('No hay conversación para exportar');
-                return;
-            }
-            const lineas = historial.map(m => {
-                const quien = m.tipo === 'user' ? 'Tú' : 'EZPack AI';
-                const textoPlano = m.contenido.replace(/<[^>]*>?/gm, '');
-                return `[${m.hora}] ${quien}: ${textoPlano}`;
-            });
-            const blob = new Blob([lineas.join('\n')], { type: 'text/plain;charset=utf-8' });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = `ezpack-chat-${new Date().toISOString().slice(0, 10)}.txt`;
-            document.body.appendChild(a);
-            a.click();
-            a.remove();
-            URL.revokeObjectURL(url);
-            mostrarToast('Conversación exportada ⬇️');
-        }
-
-        function mostrarSaludoInicial(guardar) {
-            const hora = new Date().getHours();
-            let saludo = 'Buenas noches';
-            if (hora >= 6 && hora < 12) saludo = 'Buenos días';
-            else if (hora >= 12 && hora < 20) saludo = 'Buenas tardes';
-            agregarMensaje(
-                `¡${saludo}! Qué gusto saludarte. Di o escribe <b>"Hey Pack"</b> para que platiquemos, pregunta la hora o fecha, consulta juegos, pide un chiste o usa el modo Mate. Escribe <b>"ayuda"</b> si quieres ver todo lo que sé hacer. ¡Aquí estoy para ayudarte! 😊`,
-                'ai', true, guardar
-            );
-        }
-
-        /* =========================================================
-           EVALUADOR MATEMÁTICO PROPIO (sin eval ni Function)
-           Soporta + - * / % ^ paréntesis y sqrt()
-        ========================================================= */
-        function tokenizarExpresion(str) {
-            const s = str.replace(/,/g, '.').toLowerCase().replace(/×/g, '*').replace(/÷/g, '/');
-            const tokens = [];
-            let i = 0;
-            while (i < s.length) {
-                const c = s[i];
-                if (/\s/.test(c)) { i++; continue; }
-                if (/[0-9.]/.test(c)) {
-                    let num = '';
-                    while (i < s.length && /[0-9.]/.test(s[i])) { num += s[i]; i++; }
-                    tokens.push({ tipo: 'num', val: parseFloat(num) });
-                    continue;
-                }
-                if ('+-*/%^()'.includes(c)) { tokens.push({ tipo: c }); i++; continue; }
-                if (s.substr(i, 4) === 'sqrt') { tokens.push({ tipo: 'sqrt' }); i += 4; continue; }
-                throw new Error('carácter no permitido: ' + c);
-            }
-            return tokens;
-        }
-
-        function calcularSeguro(expresion) {
-            const limpio = expresion.trim();
-            if (!limpio) throw new Error('Expresión vacía');
-            const tokens = tokenizarExpresion(limpio);
-            let pos = 0;
-            const peek = () => tokens[pos];
-            const next = () => tokens[pos++];
-
-            function parseExpr() {
-                let left = parseTerm();
-                while (peek() && (peek().tipo === '+' || peek().tipo === '-')) {
-                    const op = next().tipo;
-                    const right = parseTerm();
-                    left = op === '+' ? left + right : left - right;
-                }
-                return left;
-            }
-            function parseTerm() {
-                let left = parseFactor();
-                while (peek() && (peek().tipo === '*' || peek().tipo === '/' || peek().tipo === '%')) {
-                    const op = next().tipo;
-                    const right = parseFactor();
-                    if (op === '*') left *= right;
-                    else if (op === '/') { if (right === 0) throw new Error('división entre cero'); left /= right; }
-                    else left %= right;
-                }
-                return left;
-            }
-            function parseFactor() {
-                let base = parseUnary();
-                if (peek() && peek().tipo === '^') {
-                    next();
-                    const exp = parseFactor();
-                    base = Math.pow(base, exp);
-                }
-                return base;
-            }
-            function parseUnary() {
-                if (peek() && peek().tipo === '-') { next(); return -parseUnary(); }
-                if (peek() && peek().tipo === '+') { next(); return parseUnary(); }
-                return parsePrimary();
-            }
-            function parsePrimary() {
-                const t = peek();
-                if (!t) throw new Error('expresión incompleta');
-                if (t.tipo === '(') {
-                    next();
-                    const v = parseExpr();
-                    if (!peek() || peek().tipo !== ')') throw new Error('falta paréntesis');
-                    next();
-                    return v;
-                }
-                if (t.tipo === 'sqrt') {
-                    next();
-                    if (!peek() || peek().tipo !== '(') throw new Error('se esperaba ( después de sqrt');
-                    next();
-                    const v = parseExpr();
-                    if (!peek() || peek().tipo !== ')') throw new Error('falta paréntesis en sqrt');
-                    next();
-                    if (v < 0) throw new Error('raíz de número negativo');
-                    return Math.sqrt(v);
-                }
-                if (t.tipo === 'num') { next(); return t.val; }
-                throw new Error('token inesperado');
-            }
-
-            const resultado = parseExpr();
-            if (pos !== tokens.length) throw new Error('sobran símbolos en la expresión');
-            if (typeof resultado !== 'number' || !isFinite(resultado)) throw new Error('resultado inválido');
-            return Math.round(resultado * 1e10) / 1e10;
-        }
-
-        /* =========================================================
-           CONVERSOR DE UNIDADES
-        ========================================================= */
-        function convertirUnidad(valor, de, a) {
-            const tabla = {
-                'celsius->fahrenheit': v => v * 9 / 5 + 32,
-                'fahrenheit->celsius': v => (v - 32) * 5 / 9,
-                'km->millas': v => v * 0.621371,
-                'millas->km': v => v / 0.621371,
-                'kg->lb': v => v * 2.20462,
-                'lb->kg': v => v / 2.20462
-            };
-            const fn = tabla[`${de}->${a}`];
-            return fn ? Math.round(fn(valor) * 100) / 100 : null;
-        }
-
-        /* =========================================================
-           NOTAS RÁPIDAS
-        ========================================================= */
-        function cargarNotas() {
-            try { notas = JSON.parse(localStorage.getItem(LS.notas)) || []; } catch (e) { notas = []; }
-        }
-        function guardarNotas() {
-            localStorage.setItem(LS.notas, JSON.stringify(notas));
-        }
-
-        /* =========================================================
-           REGISTRO MODULAR DE COMANDOS
-           Cada entrada intenta responder; si no aplica, retorna null.
-           ctx = { texto (original), t (minúsculas), tN (sin acentos/minúsculas) }
-        ========================================================= */
-        const AYUDA_ITEMS = [
-            { ej: 'hora / fecha', desc: 'la hora o fecha actual' },
-            { ej: 'hora en tokio | londres | madrid | nueva york | los ángeles | cdmx | buenos aires | parís', desc: 'la hora en otras ciudades' },
-            { ej: 'abrir youtube / spotify / gd', desc: 'abre esa web en una pestaña nueva' },
-            { ej: 'mate: 45*12+8', desc: 'resuelve operaciones (+ − × ÷ % ^ y sqrt)' },
-            { ej: 'convierte 100 celsius a fahrenheit', desc: 'convierte temperatura, km↔millas o kg↔lb' },
-            { ej: 'dado / moneda / número aleatorio entre 1 y 100', desc: 'tira un dado, lanza una moneda o da un número al azar' },
-            { ej: 'contraseña', desc: 'genera una contraseña segura' },
-            { ej: 'mayúsculas: texto / minúsculas: texto', desc: 'cambia el formato del texto' },
-            { ej: 'contar palabras: texto', desc: 'cuenta palabras y caracteres' },
-            { ej: 'nota: texto / ver notas / borrar notas', desc: 'guarda notas rápidas en este navegador' },
-            { ej: 'temporizador 5 minutos', desc: 'te avisa aquí cuando el tiempo termine' },
-            { ej: 'buscar en internet algo', desc: 'abre una búsqueda en Google' },
-            { ej: 'buscar en wikipedia algo', desc: 'abre el artículo en Wikipedia' },
-            { ej: 'estadísticas', desc: 'muestra datos de esta conversación' },
-            { ej: 'chiste', desc: 'te cuenta un chiste' }
-        ];
-
-        function construirAyuda() {
-            const lista = AYUDA_ITEMS.map(i => `• <b>${i.ej}</b>: ${i.desc}`).join('<br>');
-            return `Esto es lo que sé hacer:<br>${lista}<br><br>También puedo platicar contigo en distintos modos (Amigable, Mate, Experta, Omni, Meme) desde los botones de arriba. ¡Pruébame! 😊`;
-        }
-
-        const COMANDOS = [
-            // ayuda
-            ctx => (ctx.tN.includes('ayuda') || ctx.t === '?') ? { texto: construirAyuda(), esHTML: true } : null,
-
-            // hora en <ciudad>
-            ctx => {
-                if (!ctx.tN.includes('hora en ')) return null;
-                const consulta = ctx.tN.split('hora en ')[1].trim();
-                const encontrada = Object.keys(CIUDADES_TZ).find(k => consulta.includes(normalizar(k)));
-                if (!encontrada) return { texto: 'No tengo esa ciudad en mi lista. Prueba con Tokio, Londres, Madrid, Nueva York, Los Ángeles, CDMX, Buenos Aires o París.', esHTML: false };
-                const horaCiudad = new Date().toLocaleTimeString('es-ES', { timeZone: CIUDADES_TZ[encontrada], hour: '2-digit', minute: '2-digit' });
-                return { texto: `En ${encontrada} son las ${horaCiudad}.`, esHTML: false };
-            },
-
-            // hora (genérico)
-            ctx => ctx.tN.includes('hora') ? { texto: `¡Claro! En este momento son las ${horaCorta(new Date())}.`, esHTML: false } : null,
-
-            // fecha
-            ctx => (ctx.tN.includes('fecha') || ctx.tN.includes('que dia es')) ? { texto: `Hoy es ${fechaCorta(new Date())}.`, esHTML: false } : null,
-
-            // abrir youtube / spotify / gd
-            ctx => ctx.tN.includes('abrir youtube') ? (window.open('https://youtube.com', '_blank'), { texto: '¡Perfecto! Te abro YouTube en un instante para que disfrutes de tus videos. 📺', esHTML: false }) : null,
-            ctx => ctx.tN.includes('abrir spotify') ? (window.open('https://open.spotify.com', '_blank'), { texto: '¡Entendido! Abriendo Spotify para que le des play a tu música. 🎧', esHTML: false }) : null,
-            ctx => (ctx.tN.includes('abrir geometria dash') || ctx.tN.includes('abrir gd')) ? (window.open('https://poki.com/es/g/geometry-dash', '_blank'), { texto: '¡Excelente elección! Abriendo los juegos web para pasar un buen rato. 🎮', esHTML: false }) : null,
-
-            // mate:
-            ctx => {
-                if (!(ctx.tN.startsWith('mate:') || ctx.tN.startsWith('mate ') || ctx.tN === 'mate')) return null;
-                const operacion = ctx.tN.replace('mate:', '').replace('mate', '').trim();
-                if (!operacion) return { texto: '¡Modo Mate! Dime una operación así: <b>mate: 45*12+8</b> y la resolvemos. 🧮', esHTML: true };
-                try {
-                    const resultado = calcularSeguro(operacion);
-                    return { texto: `¡Listo! El resultado de resolver <b>${escaparHTML(operacion)}</b> es <b>${resultado}</b>. 🧮✨`, esHTML: true };
-                } catch (err) {
-                    return { texto: 'Ay, tuve un pequeño desliz calculando eso. Solo puedo usar números, + − × ÷ % ^ paréntesis y sqrt(). ¿Revisamos la operación?', esHTML: false };
-                }
-            },
-
-            // mem reduct
-            ctx => ctx.tN.includes('mem reduct') ? { texto: '<b>Mem Reduct</b> es una herramienta súper útil y ligera para Windows que te ayuda a liberar memoria RAM y mantener tu compu al máximo rendimiento. ¡Te la recomiendo mucho!', esHTML: true } : null,
-
-            // convierte X unidad a unidad
-            ctx => {
-                const m = ctx.tN.match(/convierte\s+([\d.,]+)\s*(celsius|fahrenheit|km|millas|kg|lb)\s+a\s+(celsius|fahrenheit|km|millas|kg|lb)/);
-                if (!m) return null;
-                const valor = parseFloat(m[1].replace(',', '.'));
-                const resultado = convertirUnidad(valor, m[2], m[3]);
-                if (resultado === null) return { texto: 'Esa conversión no la tengo disponible todavía. Puedo hacer celsius↔fahrenheit, km↔millas y kg↔lb.', esHTML: false };
-                return { texto: `${valor} ${m[2]} equivale a <b>${resultado} ${m[3]}</b>.`, esHTML: true };
-            },
-
-            // dado
-            ctx => ctx.tN.includes('dado') ? { texto: `🎲 Salió un ${Math.ceil(Math.random() * 6)}.`, esHTML: false } : null,
-
-            // moneda
-            ctx => ctx.tN.includes('moneda') ? { texto: `🪙 Salió ${Math.random() < 0.5 ? 'cara' : 'cruz'}.`, esHTML: false } : null,
-
-            // número aleatorio
-            ctx => {
-                if (!ctx.tN.includes('numero aleatorio')) return null;
-                const m = ctx.tN.match(/(\d+)\s*(?:y|-)\s*(\d+)/);
-                const min = m ? parseInt(m[1], 10) : 1;
-                const max = m ? parseInt(m[2], 10) : 100;
-                const lo = Math.min(min, max), hi = Math.max(min, max);
-                const n = Math.floor(Math.random() * (hi - lo + 1)) + lo;
-                return { texto: `🔢 Tu número es: <b>${n}</b> (entre ${lo} y ${hi}).`, esHTML: true };
-            },
-
-            // contraseña
-            ctx => {
-                if (!ctx.tN.includes('contrasena')) return null;
-                const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789!@#$%&*';
-                const arr = new Uint32Array(14);
-                crypto.getRandomValues(arr);
-                const pass = Array.from(arr, n => chars[n % chars.length]).join('');
-                return { texto: `🔑 Aquí tienes una contraseña segura: <b>${pass}</b><br><small>Guárdala en un lugar seguro, no la volveré a mostrar.</small>`, esHTML: true };
-            },
-
-            // mayúsculas: / minúsculas:  (se usan sobre el texto original, no normalizado)
-            ctx => {
-                const m = ctx.texto.match(/^may[uú]sculas:\s*(.+)/i);
-                return m ? { texto: escaparHTML(m[1].toUpperCase()), esHTML: true } : null;
-            },
-            ctx => {
-                const m = ctx.texto.match(/^min[uú]sculas:\s*(.+)/i);
-                return m ? { texto: escaparHTML(m[1].toLowerCase()), esHTML: true } : null;
-            },
-
-            // contar palabras:
-            ctx => {
-                const m = ctx.texto.match(/^contar palabras:\s*(.+)/i);
-                if (!m) return null;
-                const contenido = m[1].trim();
-                const palabras = contenido.split(/\s+/).filter(Boolean).length;
-                return { texto: `📝 Ese texto tiene <b>${palabras}</b> palabras y <b>${contenido.length}</b> caracteres.`, esHTML: true };
-            },
-
-            // nota:
-            ctx => {
-                const m = ctx.texto.match(/^nota:\s*(.+)/i);
-                if (!m) return null;
-                notas.push(m[1].trim());
-                guardarNotas();
-                return { texto: `🗒️ Nota guardada. Ahora tienes <b>${notas.length}</b> nota(s). Escribe "ver notas" para revisarlas.`, esHTML: true };
-            },
-            // ver notas
-            ctx => {
-                if (!ctx.tN.includes('ver notas')) return null;
-                if (notas.length === 0) return { texto: 'Todavía no tienes notas guardadas. Escribe "nota: lo que quieras recordar".', esHTML: false };
-                const lista = notas.map((n, i) => `${i + 1}. ${escaparHTML(n)}`).join('<br>');
-                return { texto: `🗒️ Tus notas:<br>${lista}`, esHTML: true };
-            },
-            // borrar notas
-            ctx => {
-                if (!ctx.tN.includes('borrar notas')) return null;
-                notas = [];
-                guardarNotas();
-                return { texto: 'Listo, borré todas tus notas.', esHTML: false };
-            },
-
-            // temporizador
-            ctx => {
-                const m = ctx.tN.match(/temporizador\s+(\d+)\s*(minuto|minutos|segundo|segundos)/);
-                if (!m) return null;
-                const cantidad = parseInt(m[1], 10);
-                const esMinutos = m[2].startsWith('minuto');
-                const ms = cantidad * (esMinutos ? 60000 : 1000);
-                setTimeout(() => {
-                    agregarMensaje(`⏱️ ¡Se cumplió tu temporizador de ${cantidad} ${esMinutos ? 'minuto(s)' : 'segundo(s)'}!`, 'ai');
-                    reproducirBeep();
-                    mostrarToast('¡Temporizador terminado! ⏱️');
-                }, ms);
-                return { texto: `⏱️ Temporizador iniciado por ${cantidad} ${esMinutos ? 'minuto(s)' : 'segundo(s)'}. Te aviso aquí cuando termine.`, esHTML: false };
-            },
-
-            // buscar en internet
-            ctx => {
-                const m = ctx.texto.match(/buscar en internet\s+(.+)/i);
-                if (!m) return null;
-                window.open('https://www.google.com/search?q=' + encodeURIComponent(m[1].trim()), '_blank');
-                return { texto: `🔎 Abrí una búsqueda sobre "${escaparHTML(m[1].trim())}" en Google.`, esHTML: true };
-            },
-            // buscar en wikipedia
-            ctx => {
-                const m = ctx.texto.match(/buscar en wikipedia\s+(.+)/i);
-                if (!m) return null;
-                window.open('https://es.wikipedia.org/wiki/Special:Search?search=' + encodeURIComponent(m[1].trim()), '_blank');
-                return { texto: `📖 Abrí Wikipedia buscando "${escaparHTML(m[1].trim())}".`, esHTML: true };
-            },
-
-            // chiste
-            ctx => ctx.tN.includes('chiste') ? { texto: CHISTES[Math.floor(Math.random() * CHISTES.length)], esHTML: false } : null,
-
-            // estadísticas
-            ctx => {
-                if (!ctx.tN.includes('estadistic')) return null;
-                const mensajesUsuario = historial.filter(m => m.tipo === 'user').length;
-                const mensajesIA = historial.filter(m => m.tipo === 'ai').length;
-                const minutos = Math.max(1, Math.round((Date.now() - sessionStart) / 60000));
-                return { texto: `📊 Llevamos <b>${mensajesUsuario}</b> mensajes tuyos y <b>${mensajesIA}</b> respuestas mías, en <b>${minutos}</b> minuto(s) de esta sesión.`, esHTML: true };
-            },
-
-            // quién eres
-            ctx => (ctx.tN.includes('quien eres')) ? { texto: 'Soy <b>EZPack AI</b>, tu asistente ligero que corre directo en el navegador: sin servidores ni configuraciones complicadas. 📦', esHTML: true } : null,
-
-            // gracias
-            ctx => ctx.tN.includes('gracias') ? { texto: '¡Con mucho gusto! Aquí ando para lo que necesites. 😊', esHTML: false } : null,
-
-            // saludo
-            ctx => /^(hola|buenas|hey)\b/.test(ctx.tN) ? { texto: '¡Hola! Qué bueno tenerte por aquí. ¿En qué te ayudo hoy?', esHTML: false } : null
-        ];
-
-        function respuestaPorModo(texto) {
-            if (modoActual === 'Mate') {
-                return { texto: "¡Modo Mate activado! Escribe una operación usando 'mate: [operación]' y con gusto la resolvemos juntos.", esHTML: false };
-            } else if (modoActual === 'Meme') {
-                return { texto: '¡Claro que sí, crack! Aquí andamos al 100 y listos para lo que se ofrezca Bv 😎📦', esHTML: false };
-            } else if (modoActual === 'Experta') {
-                return { texto: `He analizado tu consulta: "${escaparHTML(texto)}". Con la información disponible localmente no tengo una respuesta específica, pero puedo ayudarte con hora, fecha, cálculos, conversiones, notas o abrir apps.`, esHTML: true };
-            } else if (modoActual === 'Omni') {
-                return { texto: `Tomando en cuenta todo el contexto: dime si necesitas la hora, un cálculo, una conversión o simplemente platicar sobre "${escaparHTML(texto)}". Aquí estoy para lo que sea. 🌐`, esHTML: true };
-            }
-            return { texto: `¡Qué interesante lo que comentas sobre "${escaparHTML(texto)}"! Me encanta ayudarte en todo lo que necesites desde casa. ¿Qué más hacemos? 😊`, esHTML: true };
-        }
-
-        /* =========================================================
-           PROCESAMIENTO PRINCIPAL
-        ========================================================= */
-        function procesarMensaje() {
-            if (procesando) return;
-            const input = document.getElementById('userInput');
-            let texto = input.value.trim();
-            if (!texto) return;
-
-            agregarMensaje(texto, 'user');
-            input.value = '';
-            actualizarContador();
-            procesando = true;
-            document.getElementById('sendBtn').disabled = true;
-
-            let t = texto.toLowerCase();
-            if (t.startsWith('hey pack')) t = t.replace('hey pack', '').trim();
-            const tN = normalizar(t);
-
-            mostrarEscribiendo();
-
-            setTimeout(() => {
-                quitarEscribiendo();
-
-                const ctx = { texto, t, tN };
-                let resultado = null;
-                for (const comando of COMANDOS) {
-                    resultado = comando(ctx);
-                    if (resultado) break;
-                }
-                if (!resultado) resultado = respuestaPorModo(texto);
-
-                agregarMensaje(resultado.texto, 'ai', resultado.esHTML);
+            if (tipo === 'ai' && guardar) {
                 reproducirBeep();
-
-                const autospeak = localStorage.getItem(LS.autospeak) !== 'false';
-                if (autospeak) {
-                    const textoLimpio = resultado.texto.replace(/<[^>]*>?/gm, '');
-                    hablar(textoLimpio);
-                }
-
-                procesando = false;
-                document.getElementById('sendBtn').disabled = false;
-                document.getElementById('userInput').focus();
-            }, 450);
+                if (localStorage.getItem(LS.autospeak) !== 'false') hablar(texto);
+            }
         }
 
-        function mostrarEscribiendo() {
+        function mostrarIndicadorEscribiendo() {
             const container = document.getElementById('chatContainer');
             const wrapper = document.createElement('div');
             wrapper.className = 'message-wrapper ai';
             wrapper.id = 'typingIndicator';
-            wrapper.setAttribute('aria-hidden', 'true');
-            wrapper.innerHTML = `<div class="message ai"><div class="typing-dots"><span></span><span></span><span></span></div></div>`;
+            wrapper.innerHTML = `
+                <div class="message-meta"><span>${AVATARES[modoActual] || '📦'} EZPack</span> <span>pensando...</span></div>
+                <div class="message ai"><div class="typing-dots"><span></span><span></span><span></span></div></div>
+            `;
             container.appendChild(wrapper);
-            container.scrollTop = container.scrollHeight;
+            if (estaAlFinal()) irAlFinal();
         }
 
-        function quitarEscribiendo() {
+        function removerIndicadorEscribiendo() {
             const el = document.getElementById('typingIndicator');
             if (el) el.remove();
         }
 
-        /* =========================================================
-           ATAJOS DE TECLADO
-        ========================================================= */
-        document.addEventListener('keydown', (e) => {
-            const input = document.getElementById('userInput');
-            if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') {
-                e.preventDefault();
-                input.focus();
-            } else if (e.key === 'Escape' && document.activeElement === input) {
-                input.value = '';
-                actualizarContador();
+        function guardarHistorial() {
+            try {
+                if (historial.length > 100) historial = historial.slice(-100);
+                localStorage.setItem(LS.historial, JSON.stringify(historial));
+            } catch (e) {}
+        }
+
+        function cargarHistorial() {
+            try {
+                const raw = localStorage.getItem(LS.historial);
+                if (raw) historial = JSON.parse(raw);
+                if (Array.isArray(historial) && historial.length > 0) {
+                    historial.forEach(m => agregarMensaje(m.texto, m.tipo, m.timestamp || Date.now(), false));
+                    irAlFinal();
+                } else {
+                    agregarMensaje('¡Hola! Soy EZPack AI 📦. ¿En qué puedo ayudarte hoy?', 'ai', Date.now(), true);
+                }
+            } catch (e) {
+                agregarMensaje('¡Hola! Soy EZPack AI 📦. ¿En qué puedo ayudarte hoy?', 'ai', Date.now(), true);
             }
-        });
+        }
+
+        function cargarNotas() {
+            try {
+                const raw = localStorage.getItem(LS.notas);
+                if (raw) notas = JSON.parse(raw);
+            } catch (e) { notas = []; }
+        }
+
+        function guardarNotas() {
+            try { localStorage.setItem(LS.notas, JSON.stringify(notas)); } catch (e) {}
+        }
+
+        function confirmarLimpiarChat() {
+            if (!confirm('¿Deseas borrar todo el historial de chat actual?')) return;
+            historial = [];
+            localStorage.removeItem(LS.historial);
+            document.getElementById('chatContainer').innerHTML = '';
+            ultimaFechaSeparador = '';
+            mostrarToast('Conversación borrada');
+            agregarMensaje('Chat reiniciado. ¿Qué hacemos ahora?', 'ai');
+        }
+
+        function exportarChat() {
+            if (historial.length === 0) {
+                mostrarToast('No hay nada para exportar');
+                return;
+            }
+            const lineas = historial.map(m => {
+                const fecha = new Date(m.timestamp || Date.now()).toLocaleString('es-ES');
+                const autor = m.tipo === 'user' ? 'Usuario' : 'EZPack AI';
+                return `[${fecha}] ${autor}: ${m.texto}`;
+            });
+            const blob = new Blob([lineas.join('\n\n')], { type: 'text/plain;charset=utf-8' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `ezpack_chat_${new Date().toISOString().slice(0,10)}.txt`;
+            a.click();
+            URL.revokeObjectURL(url);
+            mostrarToast('Conversación descargada ⬇️');
+        }
 
         /* =========================================================
-           INICIALIZACIÓN
+           CEREBRO LOCAL Y MODOS PERSONALIZADOS
         ========================================================= */
-        function iniciar() {
-            aplicarTema(localStorage.getItem(LS.tema) || (window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark'));
-            cargarAjustesVoz();
-            cargarNotas();
+        function resolverMatematica(exp) {
+            try {
+                let limpia = exp.replace(/,/g, '.').replace(/x/gi, '*').replace(/÷/g, '/');
+                if (!/^[0-9\s\+\-\*\/\.\(\)\^]+$/.test(limpia)) return null;
+                limpia = limpia.replace(/\^/g, '**');
+                const res = Function(`"use strict"; return (${limpia})`)();
+                if (typeof res === 'number' && !isNaN(res) && isFinite(res)) {
+                    return res;
+                }
+            } catch (e) {}
+            return null;
+        }
+
+        function formatearRespuestaPorModo(respuestaBase, esCalculo, promptOriginal) {
+            switch (modoActual) {
+                case 'Mate':
+                    if (esCalculo) return `🧮 Solución paso a paso de la expresión matemática:\n${respuestaBase}`;
+                    return `🧮 [Modo Matemático] El análisis lógico/matemático de tu consulta es: ${respuestaBase}`;
+
+                case 'Experta':
+                    return `🧠 [Respuesta Técnica]: ${respuestaBase}. Especificación procesada sin redundancias de lenguaje natural.`;
+
+                case 'Omni':
+                    const ctxPrevio = historial.slice(-3).map(h => `${h.tipo}: ${h.texto}`).join(' | ');
+                    return `🌐 [Contexto Global Activo]: Evaluando consulta "${promptOriginal}". Historial reciente: [${ctxPrevio || 'Sin historial'}]. Resultado: ${respuestaBase}`;
+
+                case 'Meme':
+                    const frasesMeme = ["¡De una, rey! 😎", "No me la contéis... 🚀", "Basadísimo. 🔥", "Literalmente yo. 🗿"];
+                    const ran = frasesMeme[Math.floor(Math.random() * frasesMeme.length)];
+                    return `${ran} ${respuestaBase} jskajska 💯`;
+
+                case 'Amigable':
+                default:
+                    return `${respuestaBase} 😊`;
+            }
+        }
+
+        function generarRespuesta(prompt) {
+            const p = normalizar(prompt.trim().toLowerCase());
+
+            // 1. Matematicas
+            let expLimpia = p.replace(/^(mate:|calcula:|cuanto es|resuelve:?)/i, '').trim();
+            let resNum = resolverMatematica(expLimpia);
+            if (resNum !== null) {
+                return formatearRespuestaPorModo(`El resultado de (${expLimpia}) es = ${resNum}`, true, prompt);
+            }
+
+            // 2. Comandos del Asistente
+            if (p === 'ayuda' || p.includes('que puedes hacer')) {
+                const ayuda = `Comandos disponibles:\n• "hora", "fecha" o "hora en [ciudad]"\n• "mate: [expresion]"\n• "abrir youtube", "abrir spotify"\n• "nota: [texto]", "ver notas", "borrar notas"\n• "dado", "moneda", "contraseña"\n• "mayusculas: [texto]", "minusculas: [texto]", "contar palabras: [texto]"\n• "buscar en wikipedia [algo]", "buscar en internet [algo]"\n• "temporizador 1 minuto"`;
+                return formatearRespuestaPorModo(ayuda, false, prompt);
+            }
+
+            if (p.includes('hora')) {
+                for (const [ciudad, tz] of Object.entries(CIUDADES_TZ)) {
+                    if (p.includes(ciudad)) {
+                        const h = new Date().toLocaleTimeString('es-ES', { timeZone: tz, hour: '2-digit', minute: '2-digit' });
+                        return formatearRespuestaPorModo(`La hora actual en ${ciudad.toUpperCase()} es ${h}.`, false, prompt);
+                    }
+                }
+                return formatearRespuestaPorModo(`La hora local es ${horaCorta(new Date())}.`, false, prompt);
+            }
+
+            if (p.includes('fecha')) {
+                return formatearRespuestaPorModo(`Hoy es ${fechaCorta(new Date())}.`, false, prompt);
+            }
+
+            if (p.includes('abrir youtube')) {
+                window.open('https://youtube.com', '_blank');
+                return formatearRespuestaPorModo('Abriendo YouTube en una nueva pestaña...', false, prompt);
+            }
+
+            if (p.includes('abrir spotify')) {
+                window.open('https://open.spotify.com', '_blank');
+                return formatearRespuestaPorModo('Abriendo Spotify en una nueva pestaña...', false, prompt);
+            }
+
+            if (p.startsWith('nota:')) {
+                const nText = prompt.substring(5).trim();
+                if (nText) {
+                    notas.push({ texto: nText, fecha: new Date().toLocaleTimeString('es-ES') });
+                    guardarNotas();
+                    return formatearRespuestaPorModo(`Nota guardada correctamente: "${nText}"`, false, prompt);
+                }
+            }
+
+            if (p === 'ver notas' || p === 'mis notas') {
+                if (notas.length === 0) return formatearRespuestaPorModo('No tienes notas guardadas en este momento.', false, prompt);
+                const lista = notas.map((n, i) => `${i + 1}. [${n.fecha}] ${n.texto}`).join('\n');
+                return formatearRespuestaPorModo(`Tus notas guardadas:\n${lista}`, false, prompt);
+            }
+
+            if (p === 'borrar notas') {
+                notas = [];
+                guardarNotas();
+                return formatearRespuestaPorModo('Todas las notas han sido eliminadas.', false, prompt);
+            }
+
+            if (p.includes('dado')) {
+                const d = Math.floor(Math.random() * 6) + 1;
+                return formatearRespuestaPorModo(`Lanzaste un dado y salió: 🎲 ${d}`, false, prompt);
+            }
+
+            if (p.includes('moneda')) {
+                const m = Math.random() < 0.5 ? 'Cara 🪙' : 'Cruz 🪙';
+                return formatearRespuestaPorModo(`Lanzaste una moneda y salió: ${m}`, false, prompt);
+            }
+
+            if (p.includes('contrasena') || p.includes('password')) {
+                const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*';
+                let pass = '';
+                for (let i = 0; i < 12; i++) pass += chars.charAt(Math.floor(Math.random() * chars.length));
+                return formatearRespuestaPorModo(`Tu nueva contraseña segura generada: ${pass}`, false, prompt);
+            }
+
+            if (p.startsWith('mayusculas:')) {
+                return formatearRespuestaPorModo(prompt.substring(11).trim().toUpperCase(), false, prompt);
+            }
+
+            if (p.startsWith('minusculas:')) {
+                return formatearRespuestaPorModo(prompt.substring(11).trim().toLowerCase(), false, prompt);
+            }
+
+            if (p.startsWith('contar palabras:')) {
+                const txt = prompt.substring(16).trim();
+                const cant = txt ? txt.split(/\s+/).length : 0;
+                return formatearRespuestaPorModo(`El texto ingresado contiene ${cant} palabras y ${txt.length} caracteres.`, false, prompt);
+            }
+
+            if (p.startsWith('buscar en wikipedia')) {
+                const q = prompt.substring(19).trim();
+                window.open(`https://es.wikipedia.org/wiki/Special:Search?search=${encodeURIComponent(q)}`, '_blank');
+                return formatearRespuestaPorModo(`Buscando "${q}" en Wikipedia...`, false, prompt);
+            }
+
+            if (p.startsWith('buscar en internet') || p.startsWith('busca')) {
+                const q = prompt.replace(/^(buscar en internet|busca)\s*/i, '').trim();
+                window.open(`https://www.google.com/search?q=${encodeURIComponent(q)}`, '_blank');
+                return formatearRespuestaPorModo(`Buscando "${q}" en Google...`, false, prompt);
+            }
+
+            if (p.includes('chiste')) {
+                const chiste = CHISTES[Math.floor(Math.random() * CHISTES.length)];
+                return formatearRespuestaPorModo(chiste, false, prompt);
+            }
+
+            if (p.startsWith('temporizador')) {
+                const m = p.match(/\d+/);
+                const mins = m ? parseInt(m[0], 10) : 1;
+                setTimeout(() => {
+                    agregarMensaje(`⏰ ¡Atención! El temporizador de ${mins} minuto(s) ha finalizado.`, 'ai');
+                }, mins * 60000);
+                return formatearRespuestaPorModo(`Temporizador programado para dentro de ${mins} minuto(s).`, false, prompt);
+            }
+
+            // Conversación Libre adaptada por Modos
+            const respuestasGenericas = {
+                Amigable: `He procesado tu mensaje "${prompt}". ¡Estoy aquí para apoyarte en lo que necesites!`,
+                Mate: `La consulta "${prompt}" no contiene una operación matemática formal, pero estoy listo para calcular lo que requieras.`,
+                Experta: `Análisis de la entrada "${prompt}" finalizado. No se detectaron comandos directos de ejecución de código o algoritmos.`,
+                Omni: `Integrando respuesta para "${prompt}". Evaluando patrones de interacción global en la sesión.`,
+                Meme: `Bro, me lanzaste un "${prompt}" y quedé pensando en la inmortalidad del cangrejo. 🦀`
+            };
+
+            return respuestasGenericas[modoActual] || `He recibido: "${prompt}".`;
+        }
+
+        function procesarMensaje() {
+            if (procesando) return;
+            const input = document.getElementById('userInput');
+            const texto = input.value.trim();
+            if (!texto) return;
+
+            input.value = '';
+            actualizarContador();
+
+            // Detectar activacion por voz con "Hey Pack"
+            let textoLimpio = texto;
+            if (normalizar(texto).toLowerCase().startsWith('hey pack')) {
+                textoLimpio = texto.replace(/^hey pack\s*/i, '');
+            }
+
+            if (!textoLimpio) return;
+
+            agregarMensaje(textoLimpio, 'user');
+
+            procesando = true;
+            document.getElementById('sendBtn').disabled = true;
+            mostrarIndicadorEscribiendo();
+
+            setTimeout(() => {
+                removerIndicadorEscribiendo();
+                const respuesta = generarRespuesta(textoLimpio);
+                agregarMensaje(respuesta, 'ai');
+                procesando = false;
+                document.getElementById('sendBtn').disabled = false;
+            }, 600);
+        }
+
+        /* =========================================================
+           INICIALIZACIÓN Y SHORTCUTS
+        ========================================================= */
+        window.addEventListener('DOMContentLoaded', () => {
+            const temaGuardado = localStorage.getItem(LS.tema) || 'dark';
+            aplicarTema(temaGuardado);
 
             const modoGuardado = localStorage.getItem(LS.modo);
             if (modoGuardado && AVATARES[modoGuardado]) {
                 modoActual = modoGuardado;
                 document.querySelectorAll('.mode-btn').forEach(btn => {
-                    btn.classList.toggle('active', btn.innerText === modoGuardado);
+                    btn.classList.toggle('active', btn.innerText === modoActual);
                 });
             }
 
-            let historialGuardado = [];
-            try { historialGuardado = JSON.parse(localStorage.getItem(LS.historial)) || []; } catch (e) { historialGuardado = []; }
+            cargarAjustesVoz();
+            cargarNotas();
+            cargarHistorial();
 
-            if (historialGuardado.length > 0) {
-                const container = document.getElementById('chatContainer');
-                historialGuardado.forEach(m => {
-                    const fechaObj = new Date(m.fecha);
-                    insertarSeparadorFechaSiCorresponde(isNaN(fechaObj) ? new Date() : fechaObj);
-                    const wrapper = crearWrapperMensaje(m.contenido, m.tipo, m.hora, m.avatar);
-                    container.appendChild(wrapper);
-                });
-                historial = historialGuardado;
-                container.scrollTop = container.scrollHeight;
-            } else {
-                mostrarSaludoInicial(true);
-            }
+            const chat = document.getElementById('chatContainer');
+            chat.addEventListener('scroll', () => {
+                if (estaAlFinal()) {
+                    const btn = document.getElementById('scrollBottomBtn');
+                    btn.classList.remove('show');
+                    const badge = document.getElementById('scrollBadge');
+                    badge.classList.remove('show');
+                    badge.textContent = '';
+                }
+            });
 
-            actualizarContador();
-        }
-
-        iniciar();
+            document.addEventListener('keydown', (e) => {
+                if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+                    e.preventDefault();
+                    document.getElementById('userInput').focus();
+                }
+            });
+        });
     </script>
 </body>
 </html>
