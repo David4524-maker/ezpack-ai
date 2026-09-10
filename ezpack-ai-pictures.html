@@ -4,6 +4,8 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>🖼️ EZPack AI PICTURES</title>
+  <!-- Script externo para codificación e importación directa a MP3 -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/lamejs/1.2.1/lame.min.js"></script>
   <style>
     :root {
       --bg-main: #080a0e;
@@ -298,6 +300,49 @@
         <button class="preset-btn" onclick="runPreset('Lofi Chill Beats')">🎧 Lofi Chill</button>
         <button class="preset-btn" onclick="runPreset('Synth Arp 80s Sequence')">🎹 Synth Arp</button>
       </div>
+
+      <span class="title-sub">Imágenes Extra</span>
+      <div class="presets-grid">
+        <button class="preset-btn" onclick="runPreset('Galaxia Espiral Pro')">🌌 Galaxia Espiral</button>
+        <button class="preset-btn" onclick="runPreset('Bosque Pixel Art')">🌲 Bosque Pixel</button>
+        <button class="preset-btn" onclick="runPreset('Ciudad Cyberpunk Neon')">🏙️ Ciudad Neon</button>
+        <button class="preset-btn" onclick="runPreset('Placa Circuito PCB')">🔌 Circuito PCB</button>
+        <button class="preset-btn" onclick="runPreset('Esfera Cristal FX')">🔮 Esfera Cristal</button>
+        <button class="preset-btn" onclick="runPreset('Paisaje Bajo el Agua')">🌊 Agua Sub</button>
+        <button class="preset-btn" onclick="runPreset('Fuego Llama Retró')">🔥 Fuego Retro</button>
+        <button class="preset-btn" onclick="runPreset('Montanas Bajo Aurora')">🏔️ Aurora Boreal</button>
+        <button class="preset-btn" onclick="runPreset('Portal Cuantico VTX')">🌀 Portal Cuántico</button>
+        <button class="preset-btn" onclick="runPreset('Arte Blueprint 2D')">📐 Blueprint Plan</button>
+      </div>
+
+      <span class="title-sub">Videos Extra</span>
+      <div class="presets-grid">
+        <button class="preset-btn" onclick="runPreset('Vuelo Estelar Warp Video')">🚀 Vuelo Estelar</button>
+        <button class="preset-btn" onclick="runPreset('Matriz Lluvia Dig Video')">🟢 Matriz Lluvia</button>
+        <button class="preset-btn" onclick="runPreset('Ondas Radar Sonar Video')">📡 Sonar Radar</button>
+        <button class="preset-btn" onclick="runPreset('Particulas Caos Video')">✨ Partículas FX</button>
+        <button class="preset-btn" onclick="runPreset('Tubo Neon Rotativo Video')">💡 Tubo Neón 3D</button>
+        <button class="preset-btn" onclick="runPreset('Efecto TV Estatica Video')">📺 TV Estática</button>
+        <button class="preset-btn" onclick="runPreset('Superficie Sol Plasma Video')">☀️ Plasma Solar</button>
+        <button class="preset-btn" onclick="runPreset('Lava Lámpara Motion Video')">🫧 Lámpara Lava</button>
+        <button class="preset-btn" onclick="runPreset('Onda de Choque Explosion Video')">💥 Onda Choque</button>
+        <button class="preset-btn" onclick="runPreset('Anillos Orbitales 3D Video')">🪐 Anillos 3D</button>
+      </div>
+
+      <span class="title-sub">Sonidos Extra</span>
+      <div class="presets-grid">
+        <button class="preset-btn" onclick="runPreset('Disparo Laser SciFi')">🔫 Láser Sci-Fi</button>
+        <button class="preset-btn" onclick="runPreset('Sable de Luz Beam')">⚔️ Sable Luz</button>
+        <button class="preset-btn" onclick="runPreset('Explosion Grave Sub')">💥 Explosión Sub</button>
+        <button class="preset-btn" onclick="runPreset('Teletransporte Beam FX')">✨ Teletransporte</button>
+
+        <button class="preset-btn" onclick="runPreset('Moneda Arcade Jump')">🪙 Moneda Arcade</button>
+        <button class="preset-btn" onclick="runPreset('Paso Sobre Grava SFX')">👟 Paso Grava</button>
+        <button class="preset-btn" onclick="runPreset('Sintetizador Bass Drop')">📉 Bass Drop</button>
+        <button class="preset-btn" onclick="runPreset('Sirena Alarma Policia')">🚨 Sirena Alarma</button>
+        <button class="preset-btn" onclick="runPreset('Interferencia Radio FM')">📻 Interferencia</button>
+        <button class="preset-btn" onclick="runPreset('Reloj Tic Tac Sweep')">⏱️ Reloj TicTac</button>
+      </div>
     </aside>
 
     <main class="workspace">
@@ -414,11 +459,11 @@
         const seed = this.getHash(prompt);
 
         // Routing de Audio / SFX
-        if (p.includes('teclado') || p.includes('error') || p.includes('advertencia') || p.includes('pregunta') || p.includes('info') || p.includes('llamada') || p.includes('lofi') || p.includes('synth') || p.includes('musica') || mode === 'aud') {
+        if (p.includes('sonido') || p.includes('audio') || p.includes('sfx') || p.includes('teclado') || p.includes('error') || p.includes('advertencia') || p.includes('pregunta') || p.includes('info') || p.includes('llamada') || p.includes('lofi') || p.includes('synth') || p.includes('musica') || p.includes('laser') || p.includes('sable') || p.includes('explosion') || p.includes('teletransporte') || p.includes('moneda') || p.includes('paso') || p.includes('bass drop') || p.includes('sirena') || p.includes('interferencia') || p.includes('reloj') || mode === 'aud') {
           return this.buildAudioCode(prompt, p, seed);
         }
         // Routing de Videos / Motion 60FPS
-        if (p.includes('video') || p.includes('tunel') || p.includes('motion') || mode === 'vid') {
+        if (p.includes('video') || p.includes('tunel') || p.includes('motion') || p.includes('vuelo estelar') || p.includes('matriz') || p.includes('sonar') || p.includes('particulas') || p.includes('tubo neon') || p.includes('tv estatica') || p.includes('plasma') || p.includes('lava') || p.includes('onda choque') || p.includes('anillos') || mode === 'vid') {
           return this.buildVideoCode(prompt, p, seed);
         }
         // Visuales / Canvas Img
@@ -430,27 +475,24 @@
 
         if (p.includes('minecraft')) {
           canvasScript = `
-            // Minecraft Block Generator
             const colors = ['#5b8c31', '#866043', '#4a3828', '#3c3c3c', '#48b5c4'];
             const sz = 32;
             for(let x=0; x<520; x+=sz) {
               for(let y=0; y<340; y+=sz) {
                 let c = (y < 96) ? '#6293cc' : (y === 96) ? colors[0] : colors[1];
-                if(y > 220 && Math.random() > 0.6) c = colors[3]; // mineral
-                if(y > 260 && Math.random() > 0.8) c = colors[4]; // diamante
+                if(y > 220 && Math.random() > 0.6) c = colors[3];
+                if(y > 260 && Math.random() > 0.8) c = colors[4];
                 ctx.fillStyle = c;
                 ctx.fillRect(x,y,sz,sz);
                 ctx.strokeStyle = 'rgba(0,0,0,0.2)';
                 ctx.strokeRect(x,y,sz,sz);
               }
             }
-            // Sun Pixel Box
             ctx.fillStyle = '#fff'; ctx.fillRect(380, 20, 50, 50);
           `;
         } else if (p.includes('windows')) {
           canvasScript = `
             ctx.fillStyle = '#0078d4'; ctx.fillRect(0,0,520,340);
-            // Windows Logo
             const colors = ['#f25022', '#7fba00', '#00a4ef', '#ffb900'];
             let offsets = [[180,110], [265,110], [180,195], [265,195]];
             offsets.forEach((o, i) => { ctx.fillStyle = colors[i]; ctx.fillRect(o[0], o[1], 75, 75); });
@@ -461,12 +503,10 @@
             let g = ctx.createLinearGradient(0,0,520,340);
             g.addColorStop(0, '#e36414'); g.addColorStop(1, '#9a031e');
             ctx.fillStyle = g; ctx.fillRect(0,0,520,340);
-            // Top Bar
             ctx.fillStyle = 'rgba(255,255,255,0.2)'; ctx.fillRect(0,0,520,24);
             ctx.fillStyle = '#ff5f56'; ctx.beginPath(); ctx.arc(15,12,5,0,Math.PI*2); ctx.fill();
             ctx.fillStyle = '#ffbd2e'; ctx.beginPath(); ctx.arc(30,12,5,0,Math.PI*2); ctx.fill();
             ctx.fillStyle = '#27c93f'; ctx.beginPath(); ctx.arc(45,12,5,0,Math.PI*2); ctx.fill();
-            // Dock
             ctx.fillStyle = 'rgba(255,255,255,0.25)'; ctx.roundRect(140, 285, 240, 45, 12); ctx.fill();
           `;
         } else if (p.includes('linux')) {
@@ -501,15 +541,118 @@
               ctx.fillStyle = g; ctx.beginPath(); ctx.arc(x,y,r,0,Math.PI*2); ctx.fill();
             }
           `;
+        } else if (p.includes('galaxia espiral')) {
+          canvasScript = `
+            ctx.fillStyle = '#020208'; ctx.fillRect(0,0,520,340);
+            ctx.translate(260,170);
+            for(let i=0; i<800; i++){
+              let a = i * 0.1;
+              let r = i * 0.25;
+              let x = r * Math.cos(a + i*0.002);
+              let y = r * Math.sin(a + i*0.002);
+              ctx.fillStyle = i % 2 === 0 ? '#00f5ff' : '#ff2a6d';
+              ctx.fillRect(x,y,2,2);
+            }
+            ctx.setTransform(1, 0, 0, 1, 0, 0);
+          `;
+        } else if (p.includes('bosque pixel')) {
+          canvasScript = `
+            ctx.fillStyle = '#101c24'; ctx.fillRect(0,0,520,340);
+            ctx.fillStyle = '#1b3238'; ctx.fillRect(0,180,520,160);
+            for(let x=0; x<520; x+=20) {
+              let h = 40 + Math.sin(x)*20;
+              ctx.fillStyle = '#0e4a30';
+              ctx.beginPath(); ctx.moveTo(x, 220); ctx.lineTo(x+10, 220-h); ctx.lineTo(x+20, 220); ctx.fill();
+            }
+            ctx.fillStyle = '#fff'; ctx.arc(420, 60, 25, 0, Math.PI*2); ctx.fill();
+          `;
+        } else if (p.includes('ciudad cyberpunk')) {
+          canvasScript = `
+            ctx.fillStyle = '#080014'; ctx.fillRect(0,0,520,340);
+            for(let x=0; x<520; x+=35) {
+              let h = 100 + (x * 37) % 180;
+              ctx.fillStyle = '#120826'; ctx.fillRect(x, 340-h, 30, h);
+              ctx.fillStyle = (x % 2 === 0) ? '#ff2a6d' : '#00f5ff';
+              for(let wy=340-h+10; wy<330; wy+=20) ctx.fillRect(x+5, wy, 6, 8);
+            }
+          `;
+        } else if (p.includes('placa circuito')) {
+          canvasScript = `
+            ctx.fillStyle = '#052919'; ctx.fillRect(0,0,520,340);
+            ctx.strokeStyle = '#10b981'; ctx.lineWidth = 3;
+            for(let i=0; i<15; i++) {
+              let y = i * 22 + 10;
+              ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(120 + i*15, y); ctx.lineTo(160 + i*15, y+20); ctx.lineTo(520, y+20); ctx.stroke();
+            }
+            ctx.fillStyle = '#eab308';
+            for(let i=0; i<20; i++) { ctx.beginPath(); ctx.arc((i*37)%500 + 10, (i*23)%320 + 10, 4, 0, Math.PI*2); ctx.fill(); }
+          `;
+        } else if (p.includes('esfera cristal')) {
+          canvasScript = `
+            ctx.fillStyle = '#0d0f18'; ctx.fillRect(0,0,520,340);
+            let g = ctx.createRadialGradient(260,170,10, 260,170,100);
+            g.addColorStop(0, '#ffffff');
+            g.addColorStop(0.3, '#38bdf8');
+            g.addColorStop(0.8, '#0369a1');
+            g.addColorStop(1, 'rgba(0,0,0,0.8)');
+            ctx.fillStyle = g; ctx.beginPath(); ctx.arc(260,170,100,0,Math.PI*2); ctx.fill();
+            ctx.strokeStyle = '#7dd3fc'; ctx.lineWidth = 3; ctx.stroke();
+          `;
+        } else if (p.includes('paisaje bajo el agua')) {
+          canvasScript = `
+            let g = ctx.createLinearGradient(0,0,0,340);
+            g.addColorStop(0, '#0284c7'); g.addColorStop(1, '#032b45');
+            ctx.fillStyle = g; ctx.fillRect(0,0,520,340);
+            ctx.fillStyle = '#fde047'; ctx.fillRect(0,300,520,40);
+            ctx.fillStyle = 'rgba(255,255,255,0.15)';
+            for(let i=0; i<8; i++) { ctx.fillRect(i*70, 0, 25, 340); }
+          `;
+        } else if (p.includes('fuego llama')) {
+          canvasScript = `
+            ctx.fillStyle = '#0a0002'; ctx.fillRect(0,0,520,340);
+            for(let i=0; i<300; i++) {
+              let x = 260 + (Math.random()-0.5)*120;
+              let y = 340 - Math.random()*220;
+              let r = (340 - y) / 12;
+              ctx.fillStyle = y > 240 ? '#fef08a' : y > 180 ? '#f97316' : '#dc2626';
+              ctx.beginPath(); ctx.arc(x,y,r,0,Math.PI*2); ctx.fill();
+            }
+          `;
+        } else if (p.includes('montanas bajo aurora')) {
+          canvasScript = `
+            ctx.fillStyle = '#030712'; ctx.fillRect(0,0,520,340);
+            let g = ctx.createLinearGradient(0,0,520,0);
+            g.addColorStop(0, 'rgba(34,197,94,0.1)'); g.addColorStop(0.5, 'rgba(168,85,247,0.6)'); g.addColorStop(1, 'rgba(56,189,248,0.1)');
+            ctx.fillStyle = g; ctx.fillRect(0,30,520,150);
+            ctx.fillStyle = '#111827';
+            ctx.beginPath(); ctx.moveTo(0,340); ctx.lineTo(130,160); ctx.lineTo(260,340); ctx.fill();
+            ctx.beginPath(); ctx.moveTo(200,340); ctx.lineTo(370,120); ctx.lineTo(520,340); ctx.fill();
+          `;
+        } else if (p.includes('portal cuantico')) {
+          canvasScript = `
+            ctx.fillStyle = '#05020a'; ctx.fillRect(0,0,520,340);
+            for(let r=120; r>5; r-=8) {
+              ctx.strokeStyle = r % 16 === 0 ? '#a855f7' : '#06b6d4';
+              ctx.lineWidth = 4;
+              ctx.beginPath(); ctx.ellipse(260,170,r,r*0.6,r*0.1,0,Math.PI*2); ctx.stroke();
+            }
+          `;
+        } else if (p.includes('blueprint')) {
+          canvasScript = `
+            ctx.fillStyle = '#1e3a8a'; ctx.fillRect(0,0,520,340);
+            ctx.strokeStyle = 'rgba(255,255,255,0.2)'; ctx.lineWidth = 1;
+            for(let x=0; x<520; x+=20) { ctx.beginPath(); ctx.moveTo(x,0); ctx.lineTo(x,340); ctx.stroke(); }
+            for(let y=0; y<340; y+=20) { ctx.beginPath(); ctx.moveTo(0,y); ctx.lineTo(520,y); ctx.stroke(); }
+            ctx.strokeStyle = '#ffffff'; ctx.lineWidth = 2;
+            ctx.strokeRect(80,60,360,220); ctx.strokeRect(120,90,140,100);
+            ctx.fillStyle = '#ffffff'; ctx.font = '12px monospace'; ctx.fillText('EZ-BLUEPRINT REV 1.0', 90, 265);
+          `;
         } else {
-          // Sol Retro / Default
           canvasScript = `
             let g = ctx.createLinearGradient(0,0,0,340);
             g.addColorStop(0, '#1a0033'); g.addColorStop(0.6, '#ff0055'); g.addColorStop(1, '#ffbe0b');
             ctx.fillStyle = g; ctx.fillRect(0,0,520,340);
-            // Sun
             ctx.fillStyle = '#ffbe0b'; ctx.beginPath(); ctx.arc(260, 170, 65, 0, Math.PI*2); ctx.fill();
-            // Grid Lines
             ctx.strokeStyle = '#00f5ff'; ctx.lineWidth = 1.5;
             for(let y=170; y<340; y+=12) { ctx.beginPath(); ctx.moveTo(0,y); ctx.lineTo(520,y); ctx.stroke(); }
           `;
@@ -521,15 +664,24 @@
   <style>
     body { margin:0; background:#080a0e; display:flex; flex-direction:column; align-items:center; justify-content:center; min-height:100vh; color:#fff; font-family:sans-serif; }
     canvas { border:2px solid #ff2a6d; border-radius:10px; box-shadow:0 0 20px #ff2a6d55; }
+    .dl-btn { margin-top: 15px; padding: 10px 20px; background: #ff2a6d; color: #fff; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; }
   </style>
 </head>
 <body>
   <h3>🎨 Canvas Art: ${prompt}</h3>
   <canvas id="cv" width="520" height="340"></canvas>
+  <button class="dl-btn" onclick="downloadImage()">💾 Descargar Imagen (.PNG)</button>
   <script>
     const cv = document.getElementById('cv');
     const ctx = cv.getContext('2d');
     ${canvasScript}
+
+    function downloadImage() {
+      const a = document.createElement('a');
+      a.download = 'imagen_ezpack.png';
+      a.href = cv.toDataURL('image/png');
+      a.click();
+    }
   <\/script>
 </body>
 </html>`;
@@ -540,7 +692,6 @@
 
         if (p.includes('minecraft')) {
           motionScript = `
-            // Minecraft 3D voxel motion camera simulation
             t += 0.04;
             ctx.fillStyle = '#6293cc'; ctx.fillRect(0,0,520,320);
             for(let x=0; x<16; x++) {
@@ -563,8 +714,116 @@
             for(let y=160 + offset; y<320; y+=20) { ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(520, y); ctx.stroke(); }
             for(let x=-200; x<720; x+=40) { ctx.beginPath(); ctx.moveTo(260, 160); ctx.lineTo(x, 320); ctx.stroke(); }
           `;
+        } else if (p.includes('vuelo estelar')) {
+          motionScript = `
+            t += 0.05;
+            ctx.fillStyle = 'rgba(5,5,12,0.3)'; ctx.fillRect(0,0,520,320);
+            ctx.fillStyle = '#ffffff';
+            for(let i=0; i<60; i++) {
+              let z = ((i*17 + t*120) % 520);
+              let x = ((i*37)%520 - 260) * (z/100) + 260;
+              let y = ((i*53)%320 - 160) * (z/100) + 160;
+              let sz = (z/100);
+              if(x>=0 && x<=520 && y>=0 && y<=320) ctx.fillRect(x,y,sz,sz);
+            }
+          `;
+        } else if (p.includes('matriz')) {
+          motionScript = `
+            t += 0.05;
+            ctx.fillStyle = 'rgba(0,15,5,0.2)'; ctx.fillRect(0,0,520,320);
+            ctx.fillStyle = '#00ff66'; ctx.font = '14px monospace';
+            for(let i=0; i<26; i++) {
+              let y = ((t*150 + i*47) % 340);
+              let char = String.fromCharCode(0x30a0 + ((i + Math.floor(t*10)) % 96));
+              ctx.fillText(char, i*20, y);
+            }
+          `;
+        } else if (p.includes('sonar')) {
+          motionScript = `
+            t += 0.03;
+            ctx.fillStyle = '#021208'; ctx.fillRect(0,0,520,320);
+            ctx.strokeStyle = '#10b981'; ctx.lineWidth = 2;
+            let r = (t*80) % 180;
+            ctx.beginPath(); ctx.arc(260,160,r,0,Math.PI*2); ctx.stroke();
+            ctx.beginPath(); ctx.arc(260,160,140,0,Math.PI*2); ctx.stroke();
+            ctx.beginPath(); ctx.moveTo(260,160); ctx.lineTo(260 + Math.cos(t*2)*140, 160 + Math.sin(t*2)*140); ctx.stroke();
+          `;
+        } else if (p.includes('particulas')) {
+          motionScript = `
+            t += 0.04;
+            ctx.fillStyle = 'rgba(10,5,20,0.2)'; ctx.fillRect(0,0,520,320);
+            for(let i=0; i<40; i++) {
+              let x = 260 + Math.sin(t + i)*120;
+              let y = 160 + Math.cos(t*1.3 + i*0.5)*80;
+              ctx.fillStyle = i%2===0 ? '#ec4899' : '#8b5cf6';
+              ctx.beginPath(); ctx.arc(x,y,4,0,Math.PI*2); ctx.fill();
+            }
+          `;
+        } else if (p.includes('tubo neon')) {
+          motionScript = `
+            t += 0.05;
+            ctx.fillStyle = '#000000'; ctx.fillRect(0,0,520,320);
+            ctx.strokeStyle = '#38bdf8'; ctx.lineWidth = 8;
+            ctx.shadowBlur = 20; ctx.shadowColor = '#0284c7';
+            ctx.beginPath();
+            ctx.ellipse(260, 160, 120, 60, t, 0, Math.PI*2);
+            ctx.stroke(); ctx.shadowBlur = 0;
+          `;
+        } else if (p.includes('tv estatica')) {
+          motionScript = `
+            let imgData = ctx.createImageData(520, 320);
+            for (let i = 0; i < imgData.data.length; i += 4) {
+              let v = Math.random() * 255;
+              imgData.data[i] = v; imgData.data[i+1] = v; imgData.data[i+2] = v; imgData.data[i+3] = 255;
+            }
+            ctx.putImageData(imgData, 0, 0);
+          `;
+        } else if (p.includes('plasma')) {
+          motionScript = `
+            t += 0.03;
+            ctx.fillStyle = '#000000'; ctx.fillRect(0,0,520,320);
+            for(let x=0; x<520; x+=20) {
+              for(let y=0; y<320; y+=20) {
+                let v = Math.sin(x*0.02 + t) + Math.sin(y*0.02 + t);
+                ctx.fillStyle = \`hsl(\${v*60 + 30}, 100%, 50%)\`;
+                ctx.fillRect(x,y,20,20);
+              }
+            }
+          `;
+        } else if (p.includes('lava')) {
+          motionScript = `
+            t += 0.02;
+            ctx.fillStyle = '#2e1065'; ctx.fillRect(0,0,520,320);
+            for(let i=0; i<5; i++) {
+              let y = 160 + Math.sin(t + i)*90;
+              let x = 100 + i*80 + Math.cos(t*0.5 + i)*20;
+              let g = ctx.createRadialGradient(x,y,10,x,y,50);
+              g.addColorStop(0, '#f43f5e'); g.addColorStop(1, 'transparent');
+              ctx.fillStyle = g; ctx.beginPath(); ctx.arc(x,y,50,0,Math.PI*2); ctx.fill();
+            }
+          `;
+        } else if (p.includes('onda choque')) {
+          motionScript = `
+            t += 0.04;
+            ctx.fillStyle = 'rgba(0,0,0,0.25)'; ctx.fillRect(0,0,520,320);
+            let r = (t*120) % 220;
+            ctx.strokeStyle = \`rgba(244, 63, 94, \${1 - r/220})\`;
+            ctx.lineWidth = 10;
+            ctx.beginPath(); ctx.arc(260, 160, r, 0, Math.PI*2); ctx.stroke();
+          `;
+        } else if (p.includes('anillos')) {
+          motionScript = `
+            t += 0.03;
+            ctx.fillStyle = '#030712'; ctx.fillRect(0,0,520,320);
+            for(let i=1; i<=3; i++) {
+              ctx.strokeStyle = i===1 ? '#eab308' : i===2 ? '#a855f7' : '#06b6d4';
+              ctx.lineWidth = 4;
+              ctx.beginPath();
+              ctx.ellipse(260, 160, i*45, i*20, t*i, 0, Math.PI*2);
+              ctx.stroke();
+            }
+          `;
         } else {
-          // Tunnel 3D Motion
           motionScript = `
             t += 0.04;
             ctx.fillStyle = 'rgba(0,0,0,0.2)'; ctx.fillRect(0,0,520,320);
@@ -585,20 +844,53 @@
   <style>
     body { margin:0; background:#000; display:flex; flex-direction:column; align-items:center; justify-content:center; min-height:100vh; color:#00f5ff; font-family:monospace; }
     canvas { border:2px solid #00f5ff; border-radius:10px; box-shadow:0 0 25px #00f5ff66; }
+    .dl-btn { margin-top: 15px; padding: 10px 20px; background: #00f5ff; color: #000; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; }
   </style>
 </head>
 <body>
   <h3>🎬 Motion 60FPS: ${prompt}</h3>
   <canvas id="vcv" width="520" height="320"></canvas>
+  <button id="recBtn" class="dl-btn" onclick="toggleRecord()">🎥 Gravar y Descargar Video (.WEBM)</button>
   <script>
     const cv = document.getElementById('vcv');
     const ctx = cv.getContext('2d');
     let t = 0;
+    let mediaRecorder, chunks = [];
+    let isRecording = false;
+
     function render() {
       ${motionScript}
       requestAnimationFrame(render);
     }
     render();
+
+    function toggleRecord() {
+      const btn = document.getElementById('recBtn');
+      if(!isRecording) {
+        chunks = [];
+        const stream = cv.captureStream(60);
+        mediaRecorder = new MediaRecorder(stream, { mimeType: 'video/webm' });
+        mediaRecorder.ondataavailable = e => chunks.push(e.data);
+        mediaRecorder.onstop = () => {
+          const blob = new Blob(chunks, { type: 'video/webm' });
+          const a = document.createElement('a');
+          a.download = 'video_ezpack.webm';
+          a.href = URL.createObjectURL(blob);
+          a.click();
+        };
+        mediaRecorder.start();
+        isRecording = true;
+        btn.innerText = "⏹ Detener y Descargar";
+        btn.style.background = "#ff2a6d";
+        btn.style.color = "#fff";
+      } else {
+        mediaRecorder.stop();
+        isRecording = false;
+        btn.innerText = "🎥 Grabación completada";
+        btn.style.background = "#00f5ff";
+        btn.style.color = "#000";
+      }
+    }
   <\/script>
 </body>
 </html>`;
@@ -608,10 +900,28 @@
         let soundLogic = '';
         let labelDesc = '';
 
-        if (p.includes('teclado')) {
+        if (p.includes('minecraft') && p.includes('bloque') || p.includes('break') || p.includes('minecraft block break sound')) {
+          labelDesc = 'Efecto de Sonido: Romper Bloque Minecraft (Noise Crash)';
+          soundLogic = `
+            let bufSize = actx.sampleRate * 0.12;
+            let buffer = actx.createBuffer(1, bufSize, actx.sampleRate);
+            let data = buffer.getChannelData(0);
+            for (let i = 0; i < bufSize; i++) data[i] = Math.random() * 2 - 1;
+
+            let noise = actx.createBufferSource();
+            noise.buffer = buffer;
+            let filter = actx.createBiquadFilter();
+            filter.type = 'lowpass'; filter.frequency.value = 600;
+            let gain = actx.createGain();
+            gain.gain.setValueAtTime(0.5, actx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.001, actx.currentTime + 0.1);
+
+            noise.connect(filter); filter.connect(dest);
+            noise.start();
+          `;
+        } else if (p.includes('teclado')) {
           labelDesc = 'Click de Switch Mecánico (Tactile Blue/Red)';
           soundLogic = `
-            // Noise Burst + Metallic Click
             let bufSize = actx.sampleRate * 0.05;
             let buffer = actx.createBuffer(1, bufSize, actx.sampleRate);
             let data = buffer.getChannelData(0);
@@ -625,7 +935,7 @@
             gain.gain.setValueAtTime(0.4, actx.currentTime);
             gain.gain.exponentialRampToValueAtTime(0.001, actx.currentTime + 0.04);
 
-            noise.connect(filter); filter.connect(gain); gain.connect(actx.destination);
+            noise.connect(filter); filter.connect(dest);
             noise.start();
           `;
         } else if (p.includes('error')) {
@@ -634,10 +944,10 @@
             let osc1 = actx.createOscillator(), osc2 = actx.createOscillator();
             let gain = actx.createGain();
             osc1.type = 'sawtooth'; osc2.type = 'sawtooth';
-            osc1.frequency.value = 140; osc2.frequency.value = 148; // Disonancia
+            osc1.frequency.value = 140; osc2.frequency.value = 148;
             gain.gain.setValueAtTime(0.3, actx.currentTime);
             gain.gain.exponentialRampToValueAtTime(0.001, actx.currentTime + 0.35);
-            osc1.connect(gain); osc2.connect(gain); gain.connect(actx.destination);
+            osc1.connect(gain); osc2.connect(gain); gain.connect(dest);
             osc1.start(); osc2.start(); osc1.stop(actx.currentTime + 0.35); osc2.stop(actx.currentTime + 0.35);
           `;
         } else if (p.includes('advertencia') || p.includes('warning')) {
@@ -649,7 +959,7 @@
               osc.type = 'square'; osc.frequency.value = 880;
               gain.gain.setValueAtTime(0.2, actx.currentTime + t);
               gain.gain.exponentialRampToValueAtTime(0.001, actx.currentTime + t + 0.08);
-              osc.connect(gain); gain.connect(actx.destination);
+              osc.connect(gain); gain.connect(dest);
               osc.start(actx.currentTime + t); osc.stop(actx.currentTime + t + 0.08);
             });
           `;
@@ -662,7 +972,7 @@
             osc.frequency.exponentialRampToValueAtTime(700, actx.currentTime + 0.25);
             gain.gain.setValueAtTime(0.25, actx.currentTime);
             gain.gain.exponentialRampToValueAtTime(0.001, actx.currentTime + 0.28);
-            osc.connect(gain); gain.connect(actx.destination);
+            osc.connect(gain); gain.connect(dest);
             osc.start(); osc.stop(actx.currentTime + 0.28);
           `;
         } else if (p.includes('info')) {
@@ -674,7 +984,7 @@
               let t = actx.currentTime + idx * 0.1;
               gain.gain.setValueAtTime(0.2, t);
               gain.gain.exponentialRampToValueAtTime(0.001, t + 0.4);
-              osc.connect(gain); gain.connect(actx.destination);
+              osc.connect(gain); gain.connect(dest);
               osc.start(t); osc.stop(t + 0.4);
             });
           `;
@@ -687,7 +997,7 @@
               osc1.frequency.value = 440; osc2.frequency.value = 480;
               let t = actx.currentTime + i * 0.25;
               gain.gain.setValueAtTime(0.15, t); gain.gain.exponentialRampToValueAtTime(0.001, t + 0.18);
-              osc1.connect(gain); osc2.connect(gain); gain.connect(actx.destination);
+              osc1.connect(gain); osc2.connect(gain); gain.connect(dest);
               osc1.start(t); osc2.start(t); osc1.stop(t + 0.18); osc2.stop(t + 0.18);
             }
           `;
@@ -700,12 +1010,141 @@
               osc.type = 'triangle'; osc.frequency.value = f;
               let t = actx.currentTime + i * 0.3;
               gain.gain.setValueAtTime(0.2, t); gain.gain.exponentialRampToValueAtTime(0.001, t + 0.28);
-              osc.connect(gain); gain.connect(actx.destination);
+              osc.connect(gain); gain.connect(dest);
               osc.start(t); osc.stop(t + 0.28);
             });
           `;
+        } else if (p.includes('laser')) {
+          labelDesc = 'Disparo Láser Sci-Fi SFX';
+          soundLogic = `
+            let osc = actx.createOscillator(); let gain = actx.createGain();
+            osc.type = 'sawtooth';
+            osc.frequency.setValueAtTime(800, actx.currentTime);
+            osc.frequency.exponentialRampToValueAtTime(100, actx.currentTime + 0.15);
+            gain.gain.setValueAtTime(0.3, actx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.001, actx.currentTime + 0.15);
+            osc.connect(gain); gain.connect(dest);
+            osc.start(); osc.stop(actx.currentTime + 0.15);
+          `;
+        } else if (p.includes('sable')) {
+          labelDesc = 'Sable de Luz Beam FX';
+          soundLogic = `
+            let osc = actx.createOscillator(); let gain = actx.createGain();
+            osc.type = 'sawtooth';
+            osc.frequency.setValueAtTime(60, actx.currentTime);
+            osc.frequency.linearRampToValueAtTime(180, actx.currentTime + 0.3);
+            gain.gain.setValueAtTime(0.4, actx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.01, actx.currentTime + 0.5);
+            osc.connect(gain); gain.connect(dest);
+            osc.start(); osc.stop(actx.currentTime + 0.5);
+          `;
+        } else if (p.includes('explosion')) {
+          labelDesc = 'Explosión Sub-Bass Impact SFX';
+          soundLogic = `
+            let bufSize = actx.sampleRate * 0.4;
+            let buffer = actx.createBuffer(1, bufSize, actx.sampleRate);
+            let data = buffer.getChannelData(0);
+            for (let i = 0; i < bufSize; i++) data[i] = Math.random() * 2 - 1;
+            let noise = actx.createBufferSource(); noise.buffer = buffer;
+            let filter = actx.createBiquadFilter(); filter.type = 'lowpass'; filter.frequency.value = 200;
+            let gain = actx.createGain();
+            gain.gain.setValueAtTime(0.5, actx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.001, actx.currentTime + 0.4);
+            noise.connect(filter); filter.connect(dest);
+            noise.start();
+          `;
+        } else if (p.includes('teletransporte')) {
+          labelDesc = 'Efecto Teletransporte Warp Beam';
+          soundLogic = `
+            let osc = actx.createOscillator(); let gain = actx.createGain();
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(150, actx.currentTime);
+            osc.frequency.exponentialRampToValueAtTime(1200, actx.currentTime + 0.4);
+            gain.gain.setValueAtTime(0.25, actx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.001, actx.currentTime + 0.45);
+            osc.connect(gain); gain.connect(dest);
+            osc.start(); osc.stop(actx.currentTime + 0.45);
+          `;
+        } else if (p.includes('moneda')) {
+          labelDesc = 'Sonido Moneda / Coin Retro Arcade';
+          soundLogic = `
+            [987.77, 1318.51].forEach((freq, idx) => {
+              let osc = actx.createOscillator(); let gain = actx.createGain();
+              osc.type = 'square'; osc.frequency.value = freq;
+              let t = actx.currentTime + idx * 0.08;
+              gain.gain.setValueAtTime(0.2, t);
+              gain.gain.exponentialRampToValueAtTime(0.001, t + 0.15);
+              osc.connect(gain); gain.connect(dest);
+              osc.start(t); osc.stop(t + 0.15);
+            });
+          `;
+        } else if (p.includes('paso')) {
+          labelDesc = 'Paso Sobre Grava SFX';
+          soundLogic = `
+            let bufSize = actx.sampleRate * 0.1;
+            let buffer = actx.createBuffer(1, bufSize, actx.sampleRate);
+            let data = buffer.getChannelData(0);
+            for (let i = 0; i < bufSize; i++) data[i] = Math.random() * 2 - 1;
+            let noise = actx.createBufferSource(); noise.buffer = buffer;
+            let filter = actx.createBiquadFilter(); filter.type = 'bandpass'; filter.frequency.value = 1200;
+            let gain = actx.createGain();
+            gain.gain.setValueAtTime(0.3, actx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.001, actx.currentTime + 0.08);
+            noise.connect(filter); filter.connect(dest);
+            noise.start();
+          `;
+        } else if (p.includes('bass drop')) {
+          labelDesc = 'Sintetizador Bass Drop Sub-Woofer';
+          soundLogic = `
+            let osc = actx.createOscillator(); let gain = actx.createGain();
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(220, actx.currentTime);
+            osc.frequency.exponentialRampToValueAtTime(30, actx.currentTime + 0.8);
+            gain.gain.setValueAtTime(0.5, actx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.001, actx.currentTime + 0.85);
+            osc.connect(gain); gain.connect(dest);
+            osc.start(); osc.stop(actx.currentTime + 0.85);
+          `;
+        } else if (p.includes('sirena')) {
+          labelDesc = 'Sirena Alarma Policial SFX';
+          soundLogic = `
+            let osc = actx.createOscillator(); let gain = actx.createGain();
+            osc.type = 'sawtooth';
+            osc.frequency.setValueAtTime(600, actx.currentTime);
+            osc.frequency.linearRampToValueAtTime(1000, actx.currentTime + 0.25);
+            osc.frequency.linearRampToValueAtTime(600, actx.currentTime + 0.5);
+            gain.gain.setValueAtTime(0.2, actx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.001, actx.currentTime + 0.55);
+            osc.connect(gain); gain.connect(dest);
+            osc.start(); osc.stop(actx.currentTime + 0.55);
+          `;
+        } else if (p.includes('interferencia')) {
+          labelDesc = 'Interferencia Radio FM Static Burst';
+          soundLogic = `
+            let bufSize = actx.sampleRate * 0.25;
+            let buffer = actx.createBuffer(1, bufSize, actx.sampleRate);
+            let data = buffer.getChannelData(0);
+            for (let i = 0; i < bufSize; i++) data[i] = Math.random() * 2 - 1;
+            let noise = actx.createBufferSource(); noise.buffer = buffer;
+            let gain = actx.createGain();
+            gain.gain.setValueAtTime(0.25, actx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.001, actx.currentTime + 0.25);
+            noise.connect(filter); filter.connect(dest);
+            noise.start();
+          `;
+        } else if (p.includes('reloj')) {
+          labelDesc = 'Reloj Tic-Tac Mecánico SFX';
+          soundLogic = `
+            [0, 0.2].forEach((t, idx) => {
+              let osc = actx.createOscillator(); let gain = actx.createGain();
+              osc.type = 'triangle'; osc.frequency.value = idx === 0 ? 1200 : 800;
+              gain.gain.setValueAtTime(0.2, actx.currentTime + t);
+              gain.gain.exponentialRampToValueAtTime(0.001, actx.currentTime + t + 0.03);
+              osc.connect(gain); gain.connect(dest);
+              osc.start(actx.currentTime + t); osc.stop(actx.currentTime + t + 0.03);
+            });
+          `;
         } else {
-          // Lofi / Synth Arp / General Music
           labelDesc = 'Secuencia Arpegiadora Sintetizada';
           soundLogic = `
             const scale = [220, 261.63, 293.66, 329.63, 392, 440];
@@ -714,7 +1153,7 @@
               osc.type = 'sawtooth'; osc.frequency.value = scale[step % scale.length];
               let t = actx.currentTime + step * 0.2;
               gain.gain.setValueAtTime(0.15, t); gain.gain.exponentialRampToValueAtTime(0.001, t + 0.25);
-              osc.connect(gain); gain.connect(actx.destination);
+              osc.connect(gain); gain.connect(dest);
               osc.start(t); osc.stop(t + 0.25);
             }
           `;
@@ -723,10 +1162,11 @@
         return `<!DOCTYPE html>
 <html>
 <head>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/lamejs/1.2.1/lame.min.js"><\/script>
   <style>
     body { margin:0; background:#080a0e; display:flex; flex-direction:column; align-items:center; justify-content:center; min-height:100vh; color:#fff; font-family:sans-serif; }
     .card { background:#0f131d; border:2px solid #b537f2; border-radius:12px; padding:28px; text-align:center; box-shadow:0 0 25px #b537f255; }
-    button { background:#b537f2; border:none; color:#fff; padding:12px 24px; border-radius:6px; font-weight:bold; cursor:pointer; font-size:15px; margin-top:15px; }
+    .btn-aud { background:#b537f2; border:none; color:#fff; padding:12px 24px; border-radius:6px; font-weight:bold; cursor:pointer; font-size:15px; margin: 8px 4px; }
   </style>
 </head>
 <body>
@@ -734,12 +1174,52 @@
     <h2>🔊 Universal Audio Engine</h2>
     <p>Preset: <b>${prompt}</b></p>
     <p style="color:#00f5ff; font-size:13px; margin-top:6px;">${labelDesc}</p>
-    <button onclick="playAudio()">▶ Reproducir Sonido / Secuencia</button>
+    <button class="btn-aud" onclick="playAudio()">▶ Reproducir Sonido</button>
+    <button class="btn-aud" style="background:#10b981" onclick="downloadMP3()">🎵 Descargar Audio (.MP3)</button>
   </div>
   <script>
+    function generateBuffer(actx, dest) {
+      ${soundLogic}
+    }
+
     function playAudio() {
       const actx = new (window.AudioContext || window.webkitAudioContext)();
-      ${soundLogic}
+      generateBuffer(actx, actx.destination);
+    }
+
+    async function downloadMP3() {
+      const sampleRate = 44100;
+      const duration = 2.0; // Captura en segundos
+      const offlineCtx = new OfflineAudioContext(1, sampleRate * duration, sampleRate);
+      
+      generateBuffer(offlineCtx, offlineCtx.destination);
+      const renderedBuffer = await offlineCtx.startRendering();
+      
+      const pcmData = renderedBuffer.getChannelData(0);
+      const samples = new Int16Array(pcmData.length);
+      for (let i = 0; i < pcmData.length; i++) {
+        let s = Math.max(-1, Math.min(1, pcmData[i]));
+        samples[i] = s < 0 ? s * 0x8000 : s * 0x7FFF;
+      }
+      
+      const mp3encoder = new lamejs.Mp3Encoder(1, sampleRate, 128);
+      const mp3Data = [];
+      const sampleBlockSize = 1152;
+      
+      for (let i = 0; i < samples.length; i += sampleBlockSize) {
+        const sampleChunk = samples.subarray(i, i + sampleBlockSize);
+        const mp3buf = mp3encoder.encodeBuffer(sampleChunk);
+        if (mp3buf.length > 0) mp3Data.push(mp3buf);
+      }
+      
+      const mp3buf = mp3encoder.flush();
+      if (mp3buf.length > 0) mp3Data.push(mp3buf);
+      
+      const blob = new Blob(mp3Data, { type: 'audio/mp3' });
+      const a = document.createElement('a');
+      a.download = 'audio_ezpack.mp3';
+      a.href = URL.createObjectURL(blob);
+      a.click();
     }
   <\/script>
 </body>
