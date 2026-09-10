@@ -1,0 +1,408 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>EZPack AI Questions</title>
+  <style>
+    :root {
+      --bg-dark: #0a0c10;
+      --bg-panel: #12161f;
+      --bg-card: #1a202c;
+      --accent: #00ffcc;
+      --accent-glow: rgba(0, 255, 204, 0.25);
+      --text-main: #e2e8f0;
+      --text-muted: #8492a6;
+      --border: #2d3748;
+      --font-mono: 'Fira Code', 'Consolas', monospace;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    /* Personalización de la barra de scroll */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: var(--bg-dark);
+    }
+    ::-webkit-scrollbar-thumb {
+      background: var(--border);
+      border-radius: 4px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: var(--accent);
+    }
+
+    body {
+      background-color: var(--bg-dark);
+      color: var(--text-main);
+      font-family: system-ui, -apple-system, sans-serif;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    header {
+      background: var(--bg-panel);
+      border-bottom: 1px solid var(--border);
+      padding: 12px 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-shrink: 0;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-weight: 800;
+      letter-spacing: 1px;
+    }
+
+    .brand-tag {
+      background: var(--accent);
+      color: #000;
+      font-size: 10px;
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-family: var(--font-mono);
+      font-weight: bold;
+    }
+
+    .stats-badge {
+      font-size: 12px;
+      color: var(--text-muted);
+      font-family: var(--font-mono);
+    }
+
+    main {
+      flex: 1;
+      display: grid;
+      grid-template-columns: 320px 1fr;
+      overflow: hidden;
+      min-height: 0; /* Permite scroll interno en contenedores grid/flex */
+    }
+
+    /* Sidebar con lista de 70 preguntas */
+    .sidebar {
+      background: var(--bg-panel);
+      border-right: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      min-height: 0;
+    }
+
+    .filter-bar {
+      padding: 10px;
+      display: flex;
+      gap: 6px;
+      border-bottom: 1px solid var(--border);
+      flex-shrink: 0;
+    }
+
+    .btn-cat {
+      flex: 1;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      color: var(--text-muted);
+      padding: 6px 4px;
+      border-radius: 6px;
+      font-size: 11px;
+      cursor: pointer;
+      transition: 0.2s;
+    }
+
+    .btn-cat.active, .btn-cat:hover {
+      border-color: var(--accent);
+      color: var(--accent);
+      background: rgba(0, 255, 204, 0.05);
+    }
+
+    .q-list {
+      flex: 1;
+      overflow-y: auto;
+      padding: 10px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      min-height: 0;
+    }
+
+    .q-item {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      padding: 10px 12px;
+      border-radius: 6px;
+      font-size: 13px;
+      cursor: pointer;
+      transition: 0.15s;
+    }
+
+    .q-item:hover {
+      border-color: var(--accent);
+      transform: translateX(2px);
+    }
+
+    /* Área principal de consulta */
+    .content-area {
+      display: flex;
+      flex-direction: column;
+      padding: 20px;
+      gap: 16px;
+      overflow-y: auto;
+      min-height: 0;
+    }
+
+    .search-box {
+      display: flex;
+      gap: 10px;
+      flex-shrink: 0;
+    }
+
+    .search-box input {
+      flex: 1;
+      background: var(--bg-panel);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 12px 16px;
+      color: #fff;
+      font-size: 14px;
+      outline: none;
+    }
+
+    .search-box input:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 10px var(--accent-glow);
+    }
+
+    .btn-action {
+      background: var(--accent);
+      color: #000;
+      border: none;
+      padding: 0 18px;
+      border-radius: 8px;
+      font-weight: bold;
+      cursor: pointer;
+      transition: 0.2s;
+    }
+
+    .btn-action:hover {
+      opacity: 0.9;
+      box-shadow: 0 0 12px var(--accent-glow);
+    }
+
+    .terminal-card {
+      background: var(--bg-panel);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      min-height: 0;
+    }
+
+    .terminal-header {
+      background: var(--bg-card);
+      padding: 10px 16px;
+      border-bottom: 1px solid var(--border);
+      font-family: var(--font-mono);
+      font-size: 12px;
+      color: var(--accent);
+      display: flex;
+      justify-content: space-between;
+      flex-shrink: 0;
+    }
+
+    .terminal-body {
+      padding: 20px;
+      flex: 1;
+      overflow-y: auto;
+      font-size: 15px;
+      line-height: 1.6;
+      min-height: 0;
+    }
+
+    .q-title {
+      font-size: 18px;
+      color: #fff;
+      font-weight: bold;
+      margin-bottom: 12px;
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 8px;
+    }
+
+    .a-text {
+      color: var(--text-main);
+      white-space: pre-line;
+    }
+
+    @media (max-width: 768px) {
+      body { overflow-y: auto; }
+      main { grid-template-columns: 1fr; overflow: visible; }
+      .sidebar { display: none; }
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <div class="brand">
+      <span>EZPACK AI</span>
+      <span class="brand-tag">QUESTIONS</span>
+    </div>
+    <div class="stats-badge">Base local: 70 Q&A | Naturaleza & Tecnología</div>
+  </header>
+
+  <main>
+    <aside class="sidebar">
+      <div class="filter-bar">
+        <button class="btn-cat active" onclick="filterCat('all')">Todas</button>
+        <button class="btn-cat" onclick="filterCat('nat')">🌿 Naturaleza</button>
+        <button class="btn-cat" onclick="filterCat('tec')">⚡ Tecnología</button>
+        <button class="btn-cat" onclick="filterCat('bio')">🧬 Biotec</button>
+      </div>
+      <div class="q-list" id="qList"></div>
+    </aside>
+
+    <section class="content-area">
+      <div class="search-box">
+        <input type="text" id="searchInput" placeholder="Escribe palabra clave (ej. Fotosíntesis, IA, Cuántica)..." oninput="searchQA()">
+        <button class="btn-action" onclick="randomQA()">🎲 Aleatoria</button>
+      </div>
+
+      <div class="terminal-card">
+        <div class="terminal-header">
+          <span>// EZPACK_ENGINE_OUTPUT</span>
+          <span id="catBadge">CAT: GENERAL</span>
+        </div>
+        <div class="terminal-body" id="outputBody">
+          <div class="q-title">Selecciona una pregunta o usa el buscador</div>
+          <div class="a-text">El motor EZPack AI responderá instantáneamente desde la base de datos optimizada en memoria local.</div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    const database = [
+      { cat: 'nat', q: "1. ¿Cómo producen oxígeno los árboles?", a: "A través de la fotosíntesis: convierten agua y dióxido de carbono en glucosa y oxígeno utilizando la luz solar como energía." },
+      { cat: 'nat', q: "2. ¿Qué causa las auroras boreales?", a: "Partículas cargadas del Sol colisionan con gases en la atmósfera terrestre, liberando luz en los polos." },
+      { cat: 'nat', q: "3. ¿Por qué el mar es salado?", a: "El agua de lluvia disuelve minerales y sales de las rocas terrestres y los transporta a los océanos mediante los ríos." },
+      { cat: 'nat', q: "4. ¿Qué es la bioluminiscencia?", a: "La capacidad de organismos vivos de producir luz mediante reacciones químicas internas, como las luciérnagas o medusas." },
+      { cat: 'nat', q: "5. ¿Cómo detectan los murciélagos a sus presas?", a: "Utilizan la ecolocalización: emiten ondas de ultrasonido que rebotan en los objetos para crear un mapa mental de su entorno." },
+      { cat: 'nat', q: "6. ¿Por qué cambian de color las hojas en otoño?", a: "Los árboles reducen la clorofila (verde) al bajar las horas de luz, dejando al descubierto otros pigmentos como carotenoides (amarillos/naranjas)." },
+      { cat: 'nat', q: "7. ¿Qué determina el color de los ojos humanos?", a: "La cantidad y distribución de melanina en el iris, determinado por múltiples genes." },
+      { cat: 'nat', q: "8. ¿Cómo se forman los rayos?", a: "Por la acumulación de cargas eléctricas opuestas entre la nube y la tierra o entre nubes dentro de una tormenta." },
+      { cat: 'nat', q: "9. ¿Por qué los gatos ven mejor en la oscuridad?", a: "Tienen una capa reflectante detrás de la retina llamada 'tapetum lucidum' y más fotorreceptores tipo bastón." },
+      { cat: 'nat', q: "10. ¿Qué es la micorriza?", a: "Una relación simbiótica entre hongos y raíces de plantas donde intercambian agua y nutrientes por carbohidratos." },
+      { cat: 'nat', q: "11. ¿Por qué vuelan los pájaros en formación de 'V'?", a: "Ahorran energía aprovechando las corrientes de aire ascendentes generadas por las alas del ave delantera." },
+      { cat: 'nat', q: "12. ¿Qué produce los terremotos?", a: "La liberación repentina de energía acumulada en las fallas geológicas debido al movimiento de las placas tectónicas." },
+      { cat: 'nat', q: "13. ¿Cómo hibernan los osos?", a: "Reducen su ritmo cardíaco, temperatura corporal y metabolismo durante meses para sobrevivir al invierno con su grasa." },
+      { cat: 'nat', q: "14. ¿Qué es el ciclo del agua?", a: "El proceso continuo de evaporación, condensación, precipitación y escorrentía del agua en el planeta." },
+      { cat: 'nat', q: "15. ¿Cómo regenera sus extremidades la salamandra?", a: "Forma un blastema: un grupo de células madre capaces de dividirse y diferenciarse en hueso, músculo y piel." },
+      { cat: 'nat', q: "16. ¿Qué es la capa de ozono?", a: "Una capa de moléculas O3 en la estratosfera que absorbe la mayor parte de la radiación ultravioleta dañina del Sol." },
+      { cat: 'nat', q: "17. ¿Por qué ronronean los gatos?", a: "Para comunicar calma, autorregular el estrés o incluso estimular la curación ósea y muscular con la frecuencia de la vibración." },
+      { cat: 'nat', q: "18. ¿Cómo funcionan las corrientes oceánicas?", a: "Son impulsadas por el viento, la rotación terrestre (Efecto Coriolis) y diferencias de densidad por salinidad y temperatura." },
+      { cat: 'nat', q: "19. ¿Por qué el cielo es azul?", a: "Por la dispersión de Rayleigh: la atmósfera dispersa las longitudes de onda cortas de la luz solar (azul/violeta) más que las largas." },
+      { cat: 'nat', q: "20. ¿Qué es una especie clave?", a: "Un organismo que ejerce un papel desproporcionadamente grande en mantener la estructura y equilibrio de un ecosistema." },
+      { cat: 'nat', q: "21. ¿Cómo se forman los corales?", a: "Pólipos marinos construyen estructuras rígidas secretando carbonato de calcio para formar arrecifes." },
+      { cat: 'nat', q: "22. ¿Por qué la luna afecta las mareas?", a: "Por la fuerza de atracción gravitatoria que ejerce la Luna (y en menor medida el Sol) sobre las masas de agua." },
+      { cat: 'nat', q: "23. ¿Qué es la polinización cruzada?", a: "La transferencia de polen de una flor al estigma de otra planta diferente de la misma especie, aumentando la diversidad genética." },
+      { cat: 'nat', q: "24. ¿Por qué existen los desiertos?", a: "Por patrones de circulación atmosférica que crean zonas de alta presión donde el aire desciende seco y la lluvia es mínima." },
+      { cat: 'nat', q: "25. ¿Cómo sobreviven los cactus sin agua?", a: "Almacenan agua en sus tallos carnosos, tienen espinas para reducir la transpiración y hacen fotosíntesis CAM de noche." },
+      { cat: 'tec', q: "26. ¿Qué es una Red Neuronal Artificial?", a: "Un modelo computacional inspirado en el cerebro humano que aprende a identificar patrones a partir de grandes volúmenes de datos." },
+      { cat: 'tec', q: "27. ¿Cómo funciona la computación cuántica?", a: "Utiliza qubits que aprovechan la superposición y el entrelazamiento cuántico para procesar combinaciones masivas en paralelo." },
+      { cat: 'tec', q: "28. ¿Qué es Blockchain?", a: "Un libro mayor digital descentralizado e inmutable donde las transacciones se agrupan en bloques enlazados criptográficamente." },
+      { cat: 'tec', q: "29. ¿Cómo funciona la fibra óptica?", a: "Transmite datos en forma de pulsos de luz mediante reflexión interna total a través de hilos de vidrio o plástico." },
+      { cat: 'tec', q: "30. ¿Qué es la memoria RAM?", a: "Memoria de acceso aleatorio y volátil usada por la CPU para almacenar datos de acceso rápido de programas en ejecución." },
+      { cat: 'tec', q: "31. ¿Diferencia entre SSD y HDD?", a: "Un HDD usa platos magnéticos giratorios mecánicos; un SSD usa chips de memoria flash NAND sin partes móviles (mucho más rápido)." },
+      { cat: 'tec', q: "32. ¿Qué es la arquitectura ARM?", a: "Una arquitectura de procesador RISC optimizada para bajo consumo de energía, dominante en smartphones y dispositivos portátiles." },
+      { cat: 'tec', q: "33. ¿Qué es el Machine Learning?", a: "Una rama de la IA que permite a los sistemas aprender y mejorar a partir de datos sin ser programados explícitamente." },
+      { cat: 'tec', q: "34. ¿Cómo funciona el GPS?", a: "Triangula la posición midiendo el tiempo que tardan las señales enviadas por al menos cuatro satélites en llegar al receptor." },
+      { cat: 'tec', q: "35. ¿Qué es un protocolo API?", a: "Una interfaz de programación de aplicaciones que define las reglas para que diferentes programas se comuniquen entre sí." },
+      { cat: 'tec', q: "36. ¿Qué es la nube (Cloud Computing)?", a: "El acceso bajo demanda a servicios de computación (servidores, almacenamiento, BD) a través de Internet." },
+      { cat: 'tec', q: "37. ¿Cómo funciona la encriptación AES-256?", a: "Aplica rondas de sustitución y permutación de bits usando una clave de 256 bits casi imposible de romper por fuerza bruta." },
+      { cat: 'tec', q: "38. ¿Qué es el código abierto (Open Source)?", a: "Software cuyo código fuente es público para que cualquiera pueda inspeccionarlo, modificarlo y redistribuirlo libremente." },
+      { cat: 'tec', q: "39. ¿Qué es la latencia de red?", a: "El tiempo de retardo que tarda un paquete de datos en viajar desde su origen hasta su destino a través de la red." },
+      { cat: 'tec', q: "40. ¿Cómo funciona un Transistor?", a: "Un conmutador semiconductor microscópico que controla o amplifica el flujo de corriente eléctrica en un circuito integrador." },
+      { cat: 'tec', q: "41. ¿Qué es IoT (Internet de las Cosas)?", a: "La red de objetos físicos equipados con sensores y software para conectar e intercambiar datos por Internet." },
+      { cat: 'tec', q: "42. ¿Qué es la WebAssembly (Wasm)?", a: "Un formato de código binario portable que permite ejecutar código compilado (C++, Rust) a velocidad cercana a nativo en navegadores." },
+      { cat: 'tec', q: "43. ¿Cómo funciona la tecnología LiDAR?", a: "Mide distancias emitiendo pulsos de luz láser y calculando el tiempo de retorno para crear mapas 3D del entorno." },
+      { cat: 'tec', q: "44. ¿Qué es Docker y los contenedores?", a: "Empaqueta una aplicación con todas sus dependencias para ejecutarse de forma aislada y consistente en cualquier sistema." },
+      { cat: 'tec', q: "45. ¿Qué es la frecuencia de refresco (Hz)?", a: "El número de veces por segundo que una pantalla actualiza la imagen mostrada." },
+      { cat: 'tec', q: "46. ¿Qué es la Ley de Moore?", a: "La observación empírica de que el número de transistores en un microchip se duplica aproximadamente cada dos años." },
+      { cat: 'tec', q: "47. ¿Cómo funciona el procesamiento paralelo?", a: "Ejecuta múltiples tareas o hilos simultáneamente dividiendo el problema entre varios núcleos de CPU/GPU." },
+      { cat: 'tec', q: "48. ¿Qué es un Kernel de sistema operativo?", a: "El núcleo del sistema que gestiona la comunicación directa entre el hardware y el software de la computadora." },
+      { cat: 'tec', q: "49. ¿Qué es la visión por computadora?", a: "Campo de la IA dedicado a entrenar máquinas para interpretar y extraer información útil de imágenes digitales y video." },
+      { cat: 'tec', q: "50. ¿Cómo funciona una GPU?", a: "Procesador con miles de núcleos pequeños diseñados para realizar operaciones matemáticas paralelas hiperrápidas (gráficos e IA)." },
+      { cat: 'bio', q: "51. ¿Qué es CRISPR-Cas9?", a: "Una herramienta de edición genética que actúa como unas 'tijeras moleculares' para cortar y modificar ADN con precisión." },
+      { cat: 'bio', q: "52. ¿Qué es la Biónica?", a: "La aplicación de principios biológicos de la naturaleza al diseño de sistemas mecánicos y electrónicos." },
+      { cat: 'bio', q: "53. ¿Qué es un Interfaz Cerebro-Computadora (BCI)?", a: "Un sistema que registra la actividad neuronal y la traduce en comandos directos para controlar dispositivos externos." },
+      { cat: 'bio', q: "54. ¿Qué es el Biomimetismo?", a: "La disciplina que imita las mejores ideas de la naturaleza para resolver problemas tecnológicos humanos (ej. trenes bala tipo Pez Martín)." },
+      { cat: 'bio', q: "55. ¿Cómo funciona la bioimpresión 3D?", a: "Deposita capa por capa una 'biotinta' de células vivas y geles para crear estructuras de tejidos y órganos sintéticos." },
+      { cat: 'bio', q: "56. ¿Qué es la biología sintética?", a: "El diseño y construcción de nuevas partes biológicas, dispositivos u organismos genéticamente modificados para tareas específicas." },
+      { cat: 'bio', q: "57. ¿Qué son los órganos en un chip?", a: "Dispositivos microfluidicos cultivados con células humanas que simulan la estructura y función de órganos para probar medicinas." },
+      { cat: 'bio', q: "58. ¿Qué son los exoesqueletos robóticos?", a: "Estructuras vestibles con motores hidráulicos/eléctricos que aumentan la fuerza humana o rehabilitan la movilidad." },
+      { cat: 'bio', q: "59. ¿Qué es el almacenamiento de datos en ADN?", a: "La síntesis de secuencias numéricas binarias (0 y 1) codificadas en las bases nitrogenadas A, T, C, G del ADN." },
+      { cat: 'bio', q: "60. ¿Qué es la Fotosíntesis Artificial?", a: "Sistemas químicos diseñados para capturar CO2 y producir combustibles limpios impulsados únicamente por luz solar." },
+      { cat: 'bio', q: "61. ¿Qué son los nanomateriales biocompatibles?", a: "Estructuras microscópicas diseñadas para interactuar de forma segura con los sistemas biológicos (ej. transporte de fármacos)." },
+      { cat: 'bio', q: "62. ¿Cómo funcionan las prótesis mioeléctricas?", a: "Detectan las señales eléctricas generadas por la contracción muscular del paciente y las convierten en movimiento robótico." },
+      { cat: 'bio', q: "63. ¿Qué es la optogenética?", a: "Técnica que combina genética y óptica para controlar la actividad de neuronas específicas usando haces de luz." },
+      { cat: 'bio', q: "64. ¿Qué es la carne cultivada en laboratorio?", a: "Carne producida mediante el cultivo directo de células animales sin necesidad de criar ni sacrificar ganado." },
+      { cat: 'bio', q: "65. ¿Qué es la fito-remediación?", a: "El uso de plantas y微生物 para descontaminar suelos y aguas cargadas de metales pesados o químicos." },
+      { cat: 'bio', q: "66. ¿Qué es la terapia génica?", a: "La inserción, alteración o eliminación de genes defectuosos dentro de las células del paciente para curar enfermedades." },
+      { cat: 'bio', q: "67. ¿Qué son los nanorobots médicos?", a: "Dispositivos microscópicos teóricos diseñados para navegar por el torrente sanguíneo eliminando bloqueos o tumores." },
+      { cat: 'bio', q: "68. ¿Qué es la energía piezoeléctrica en biología?", a: "La generación de corriente eléctrica a partir de la deformación mecánica de ciertos materiales biológicos como huesos o colágeno." },
+      { cat: 'bio', q: "69. ¿Cómo funcionan las telas biológicas fotosintéticas?", a: "Textiles fabricados impregnando microalgas que consumen dióxido de carbono y purifican el aire mientras se usan." },
+      { cat: 'bio', q: "70. ¿Qué es la inteligencia biológica integrada?", a: "La hibridación de redes neuronales biológicas cultivadas en laboratorio conectadas a microchips de silicio para computación avanzada." }
+    ];
+
+    function renderList(items) {
+      const qList = document.getElementById('qList');
+      qList.innerHTML = '';
+      items.forEach((item) => {
+        const div = document.createElement('div');
+        div.className = 'q-item';
+        div.innerText = item.q;
+        div.onclick = () => selectQA(item);
+        qList.appendChild(div);
+      });
+    }
+
+    function selectQA(item) {
+      document.getElementById('catBadge').innerText = `CAT: ${item.cat.toUpperCase()}`;
+      document.getElementById('outputBody').innerHTML = `
+        <div class="q-title">${item.q}</div>
+        <div class="a-text">${item.a}</div>
+      `;
+    }
+
+    function filterCat(cat) {
+      document.querySelectorAll('.btn-cat').forEach(btn => btn.classList.remove('active'));
+      event.target.classList.add('active');
+      const filtered = cat === 'all' ? database : database.filter(i => i.cat === cat);
+      renderList(filtered);
+    }
+
+    function searchQA() {
+      const query = document.getElementById('searchInput').value.toLowerCase().trim();
+      const filtered = database.filter(i => 
+        i.q.toLowerCase().includes(query) || i.a.toLowerCase().includes(query)
+      );
+      renderList(filtered);
+    }
+
+    function randomQA() {
+      const randomIndex = Math.floor(Math.random() * database.length);
+      selectQA(database[randomIndex]);
+    }
+
+    renderList(database);
+  </script>
+</body>
+</html>
