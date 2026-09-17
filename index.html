@@ -6,6 +6,8 @@
     <meta name="description" content="EZPack AI: asistente ligero de voz y texto que corre 100% en tu navegador, sin servidores.">
     <meta name="theme-color" content="#0b0f19">
     <title>EZPack AI</title>
+    <!-- MEJORA 1: Favicon SVG con emoji -->
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📦</text></svg>">
     <style>
         :root {
             --bg-color: #0b0f19;
@@ -16,7 +18,13 @@
             --bubble-user: #1d4ed8;
             --bubble-ai: #1f2937;
             --danger-color: #dc2626;
+            --success-color: #10b981;
+            --warning-color: #f59e0b;
             --muted-color: #9ca3af;
+            /* MEJORA 2: variables de tamaño y densidad */
+            --font-size-base: 15px;
+            --density-pad: 12px 16px;
+            --radius: 12px;
         }
 
         html[data-theme="light"] {
@@ -31,10 +39,31 @@
             --muted-color: #6b7280;
         }
 
-        * { box-sizing: border-box; margin: 0; padding: 0; font-family: system-ui, -apple-system, sans-serif; }
-        body { background-color: var(--bg-color); color: var(--text-color); display: flex; flex-direction: column; height: 100vh; overflow: hidden; transition: background-color 0.2s, color 0.2s; }
+        /* MEJORA 3: Modo alto contraste */
+        html[data-contrast="high"] {
+            --bg-color: #000;
+            --panel-bg: #000;
+            --text-color: #fff;
+            --border-color: #fff;
+            --accent-color: #ffff00;
+            --bubble-ai: #222;
+            --bubble-user: #0000aa;
+        }
 
-        /* Header */
+        /* MEJORA 4: Densidad compacta */
+        html[data-density="compact"] {
+            --density-pad: 8px 12px;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: system-ui, -apple-system, sans-serif; }
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            display: flex; flex-direction: column; height: 100vh; overflow: hidden;
+            transition: background-color 0.2s, color 0.2s;
+            font-size: var(--font-size-base);
+        }
+
         header { background-color: var(--panel-bg); border-bottom: 1px solid var(--border-color); padding: 12px 20px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px; position: relative; }
         .logo-area { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
         .logo-box { font-size: 1.5rem; }
@@ -42,98 +71,150 @@
         .status-badge { background-color: #7f1d1d; color: #fca5a5; font-size: 0.75rem; padding: 3px 8px; border-radius: 12px; display: flex; align-items: center; gap: 5px; font-weight: 500; }
         .status-badge.active { background-color: #065f46; color: #6ee7b7; }
         .status-dot { width: 6px; height: 6px; background-color: currentColor; border-radius: 50%; }
+        .session-timer { font-size: 0.72rem; color: var(--muted-color); }
 
-        .header-right { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+        .header-right { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
         .modes { display: flex; gap: 6px; flex-wrap: wrap; }
         .mode-btn { background: var(--border-color); color: var(--text-color); border: none; padding: 6px 12px; border-radius: 6px; font-size: 0.85rem; cursor: pointer; transition: background 0.2s; }
         .mode-btn.active, .mode-btn:hover { background-color: var(--accent-color); color: #fff; }
-        .mode-btn:focus-visible, .icon-btn:focus-visible, .chip:focus-visible, .send-btn:focus-visible, .util-btn:focus-visible {
+        .mode-btn:focus-visible, .icon-btn:focus-visible, .chip:focus-visible, .send-btn:focus-visible, .util-btn:focus-visible, .emoji-btn:focus-visible {
             outline: 2px solid #93c5fd; outline-offset: 2px;
         }
 
         .util-btn { background: none; border: 1px solid var(--border-color); color: var(--muted-color); padding: 6px 10px; border-radius: 6px; font-size: 0.8rem; cursor: pointer; transition: color 0.2s, border-color 0.2s, background 0.2s; }
         .util-btn:hover { color: var(--text-color); border-color: var(--accent-color); }
         .util-btn.danger:hover { color: var(--danger-color); border-color: var(--danger-color); }
+        .util-btn.icon-only { padding: 6px 9px; }
 
-        /* Chat Container */
-        .chat-container { flex: 1; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; gap: 12px; }
-        .message-wrapper { display: flex; flex-direction: column; max-width: 80%; }
+        /* MEJORA 5: Barra de búsqueda */
+        .search-bar { display: none; background: var(--panel-bg); border-bottom: 1px solid var(--border-color); padding: 8px 20px; gap: 8px; align-items: center; }
+        .search-bar.open { display: flex; }
+        .search-bar input { flex: 1; background: var(--bg-color); border: 1px solid var(--border-color); border-radius: 8px; padding: 8px 12px; color: var(--text-color); font-size: 0.9rem; outline: none; }
+        .search-bar input:focus { border-color: var(--accent-color); }
+        .search-info { font-size: 0.8rem; color: var(--muted-color); white-space: nowrap; }
+        .search-nav { background: var(--border-color); border: none; color: var(--text-color); width: 32px; height: 32px; border-radius: 6px; cursor: pointer; }
+
+        /* MEJORA 6: Chat con markdown y código */
+        .chat-container { flex: 1; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; gap: 12px; scroll-behavior: smooth; }
+        .message-wrapper { display: flex; flex-direction: column; max-width: 80%; position: relative; }
         .message-wrapper.ai { align-self: flex-start; }
         .message-wrapper.user { align-self: flex-end; }
+        /* MEJORA 7: Agrupación visual de mensajes consecutivos */
+        .message-wrapper.grouped { margin-top: -6px; }
+        .message-wrapper.grouped .message-meta { display: none; }
 
         .message-meta { display: flex; align-items: center; gap: 6px; font-size: 0.7rem; color: var(--muted-color); margin-bottom: 3px; padding: 0 4px; }
         .message-wrapper.user .message-meta { align-self: flex-end; flex-direction: row-reverse; }
 
-        .message { padding: 12px 16px; border-radius: 12px; line-height: 1.5; font-size: 0.95rem; word-break: break-word; }
+        .message { padding: var(--density-pad); border-radius: var(--radius); line-height: 1.5; font-size: 0.95rem; word-break: break-word; position: relative; }
         .message.ai { background-color: var(--bubble-ai); border-bottom-left-radius: 4px; }
         .message.user { background-color: var(--bubble-user); color: #fff; border-bottom-right-radius: 4px; }
+        .message code.inline-code { background: rgba(128,128,128,0.25); padding: 1px 5px; border-radius: 4px; font-family: monospace; font-size: 0.88em; }
+        .message pre.code-block { background: #0d1117; color: #c9d1d9; padding: 12px 14px; border-radius: 8px; overflow-x: auto; margin: 8px 0; position: relative; font-family: monospace; font-size: 0.85rem; }
+        .message pre.code-block code { font-family: monospace; }
+        .copy-code-btn { position: absolute; top: 6px; right: 6px; background: rgba(255,255,255,0.1); border: none; color: #fff; padding: 3px 6px; border-radius: 4px; cursor: pointer; font-size: 0.75rem; }
+        .copy-code-btn:hover { background: rgba(255,255,255,0.25); }
+        .message a { color: #93c5fd; text-decoration: underline; }
 
         .date-separator { align-self: center; font-size: 0.72rem; color: var(--muted-color); background: rgba(128,128,128,0.12); padding: 3px 12px; border-radius: 12px; margin: 6px 0; }
 
-        /* Indicador de "escribiendo" */
-        .typing-dots { display: flex; gap: 4px; padding: 4px 2px; }
+        /* MEJORA 8: Indicador escribiendo con nombre */
+        .typing-dots { display: flex; gap: 4px; padding: 4px 2px; align-items: center; }
         .typing-dots span { width: 6px; height: 6px; background: var(--muted-color); border-radius: 50%; animation: bounce 1.2s infinite; }
         .typing-dots span:nth-child(2) { animation-delay: 0.15s; }
         .typing-dots span:nth-child(3) { animation-delay: 0.3s; }
+        .typing-label { font-size: 0.75rem; color: var(--muted-color); margin-left: 6px; font-style: italic; }
         @keyframes bounce { 0%, 60%, 100% { transform: translateY(0); opacity: 0.5; } 30% { transform: translateY(-4px); opacity: 1; } }
 
-        /* Botones de acción de mensaje */
-        .msg-actions { display: flex; gap: 10px; margin-top: 4px; padding: 0 4px; }
-        .speak-msg-btn, .stop-msg-btn, .copy-msg-btn { background: none; border: none; color: var(--muted-color); font-size: 0.75rem; cursor: pointer; align-self: flex-start; display: flex; align-items: center; gap: 4px; padding: 2px 4px; border-radius: 4px; transition: color 0.2s, background 0.2s; }
-        .speak-msg-btn:hover, .stop-msg-btn:hover, .copy-msg-btn:hover { color: var(--text-color); background: rgba(128,128,128,0.12); }
+        .msg-actions { display: flex; gap: 8px; margin-top: 4px; padding: 0 4px; flex-wrap: wrap; }
+        .speak-msg-btn, .stop-msg-btn, .copy-msg-btn, .pin-msg-btn, .del-msg-btn { background: none; border: none; color: var(--muted-color); font-size: 0.75rem; cursor: pointer; align-self: flex-start; display: flex; align-items: center; gap: 4px; padding: 2px 6px; border-radius: 4px; transition: color 0.2s, background 0.2s; }
+        .speak-msg-btn:hover, .stop-msg-btn:hover, .copy-msg-btn:hover, .pin-msg-btn:hover { color: var(--text-color); background: rgba(128,128,128,0.12); }
+        .del-msg-btn:hover { color: var(--danger-color); background: rgba(220,38,38,0.15); }
+        .pin-msg-btn.pinned { color: var(--warning-color); }
 
-        /* Quick Chips */
+        /* MEJORA 9: Mensajes fijados */
+        .pinned-messages { display: none; background: rgba(245,158,11,0.08); border-bottom: 1px solid var(--border-color); padding: 6px 20px; gap: 8px; overflow-x: auto; font-size: 0.8rem; }
+        .pinned-messages.show { display: flex; }
+        .pinned-item { background: var(--panel-bg); border: 1px solid var(--border-color); border-radius: 6px; padding: 4px 8px; white-space: nowrap; max-width: 240px; overflow: hidden; text-overflow: ellipsis; cursor: pointer; }
+
         .chips-container { padding: 10px 20px; display: flex; gap: 8px; overflow-x: auto; background-color: rgba(128,128,128,0.06); }
         .chip { background: var(--border-color); border: none; color: var(--text-color); padding: 6px 12px; border-radius: 16px; font-size: 0.8rem; cursor: pointer; white-space: nowrap; transition: background 0.2s; }
         .chip:hover { background: var(--accent-color); color: #fff; }
 
-        /* Input Area */
-        .input-area { background-color: var(--panel-bg); border-top: 1px solid var(--border-color); padding: 12px 20px 4px; display: flex; align-items: center; gap: 10px; }
+        .input-area { background-color: var(--panel-bg); border-top: 1px solid var(--border-color); padding: 12px 20px 4px; display: flex; align-items: center; gap: 8px; }
         .icon-btn { background: var(--border-color); border: none; color: var(--text-color); width: 40px; height: 40px; border-radius: 8px; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 1.1rem; transition: background 0.2s; flex-shrink: 0; }
         .icon-btn:hover { background: #374151; }
         .icon-btn.listening { background-color: #dc2626; color: white; animation: pulse 1.5s infinite; }
 
         input[type="text"] { flex: 1; min-width: 0; background: var(--bg-color); border: 1px solid var(--border-color); border-radius: 8px; padding: 12px 15px; color: var(--text-color); font-size: 0.95rem; outline: none; }
         input[type="text"]:focus { border-color: var(--accent-color); }
+        .emoji-btn { background: var(--border-color); border: none; color: var(--text-color); width: 40px; height: 40px; border-radius: 8px; cursor: pointer; font-size: 1.2rem; flex-shrink: 0; }
 
         .send-btn { background-color: var(--accent-color); color: white; border: none; padding: 0 20px; height: 40px; border-radius: 8px; font-weight: bold; cursor: pointer; transition: background 0.2s; flex-shrink: 0; }
         .send-btn:hover { background-color: #2563eb; }
         .send-btn:disabled { opacity: 0.5; cursor: not-allowed; }
 
-        .char-counter { font-size: 0.7rem; color: var(--muted-color); text-align: right; padding: 2px 20px 8px; background-color: var(--panel-bg); }
-        .char-counter.warning { color: #f59e0b; }
-        .char-counter.limit { color: var(--danger-color); }
+        .char-counter { font-size: 0.7rem; color: var(--muted-color); text-align: right; padding: 2px 20px 8px; background-color: var(--panel-bg); display: flex; justify-content: space-between; }
+        .char-counter .warn-text { color: var(--warning-color); }
+        .char-counter.warning #charCount { color: var(--warning-color); }
+        .char-counter.limit #charCount { color: var(--danger-color); }
 
-        /* Botón flotante ir al final */
         .scroll-bottom-btn { position: fixed; bottom: 175px; right: 24px; background: var(--accent-color); color: #fff; border: none; width: 42px; height: 42px; border-radius: 50%; cursor: pointer; display: none; align-items: center; justify-content: center; font-size: 1rem; box-shadow: 0 4px 12px rgba(0,0,0,0.35); z-index: 800; }
         .scroll-bottom-btn.show { display: flex; }
         .scroll-bottom-btn .badge { position: absolute; top: -6px; right: -6px; background: var(--danger-color); color: #fff; font-size: 0.65rem; border-radius: 10px; padding: 1px 5px; display: none; min-width: 16px; }
         .scroll-bottom-btn .badge.show { display: block; }
 
-        /* Panel de ajustes */
-        .settings-panel { position: absolute; top: 62px; right: 20px; background: var(--panel-bg); border: 1px solid var(--border-color); border-radius: 10px; padding: 16px; width: 280px; display: none; flex-direction: column; gap: 10px; z-index: 900; box-shadow: 0 8px 24px rgba(0,0,0,0.35); max-height: 72vh; overflow-y: auto; }
+        /* MEJORA 10: Panel de ajustes mejorado */
+        .settings-panel { position: absolute; top: 62px; right: 20px; background: var(--panel-bg); border: 1px solid var(--border-color); border-radius: 10px; padding: 16px; width: 320px; display: none; flex-direction: column; gap: 10px; z-index: 900; box-shadow: 0 8px 24px rgba(0,0,0,0.35); max-height: 76vh; overflow-y: auto; }
         .settings-panel.open { display: flex; }
-        .settings-title { font-weight: bold; font-size: 0.85rem; opacity: 0.85; }
+        .settings-title { font-weight: bold; font-size: 0.85rem; opacity: 0.85; margin-top: 4px; }
         .settings-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; font-size: 0.82rem; }
         .settings-row label { flex: 1; }
-        .settings-divider { border-top: 1px solid var(--border-color); margin: 2px 0; }
-        select, input[type="range"] { background: var(--bg-color); color: var(--text-color); border: 1px solid var(--border-color); border-radius: 6px; padding: 4px; max-width: 130px; }
-        #statsRow { font-size: 0.8rem; color: var(--muted-color); line-height: 1.5; }
+        .settings-row input[type="range"] { flex: 1; max-width: 130px; }
+        .settings-divider { border-top: 1px solid var(--border-color); margin: 4px 0; }
+        select, input[type="range"], input[type="number"] { background: var(--bg-color); color: var(--text-color); border: 1px solid var(--border-color); border-radius: 6px; padding: 4px; max-width: 140px; }
+        .btn-row { display: flex; gap: 6px; flex-wrap: wrap; }
+        .btn-row .util-btn { flex: 1; text-align: center; }
+        #statsRow { font-size: 0.8rem; color: var(--muted-color); line-height: 1.6; }
+        #statsRow b { color: var(--text-color); }
 
-        /* Toasts */
+        /* MEJORA 11: Emoji picker */
+        .emoji-picker { position: absolute; bottom: 70px; right: 20px; background: var(--panel-bg); border: 1px solid var(--border-color); border-radius: 10px; padding: 10px; width: 300px; display: none; grid-template-columns: repeat(8, 1fr); gap: 4px; z-index: 950; max-height: 280px; overflow-y: auto; box-shadow: 0 8px 24px rgba(0,0,0,0.35); }
+        .emoji-picker.open { display: grid; }
+        .emoji-picker button { background: none; border: none; font-size: 1.3rem; padding: 4px; cursor: pointer; border-radius: 6px; }
+        .emoji-picker button:hover { background: var(--border-color); }
+
+        /* MEJORA 12: Modal de atajos / onboarding */
+        .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.65); display: none; align-items: center; justify-content: center; z-index: 1200; padding: 16px; }
+        .modal-overlay.open { display: flex; }
+        .modal { background: var(--panel-bg); border: 1px solid var(--border-color); border-radius: 12px; padding: 22px; max-width: 460px; width: 100%; max-height: 88vh; overflow-y: auto; }
+        .modal h2 { font-size: 1.1rem; margin-bottom: 12px; }
+        .modal ul { list-style: none; }
+        .modal li { padding: 5px 0; font-size: 0.88rem; display: flex; justify-content: space-between; gap: 10px; border-bottom: 1px dashed var(--border-color); }
+        .modal kbd { background: var(--border-color); padding: 2px 8px; border-radius: 5px; font-family: monospace; font-size: 0.8rem; }
+        .modal-actions { display: flex; gap: 8px; margin-top: 16px; justify-content: flex-end; }
+
+        /* MEJORA 13: Toasts con tipos */
         .toast-container { position: fixed; bottom: 90px; left: 50%; transform: translateX(-50%); display: flex; flex-direction: column; gap: 8px; z-index: 1000; pointer-events: none; align-items: center; }
-        .toast { background: var(--panel-bg); border: 1px solid var(--border-color); color: var(--text-color); padding: 8px 14px; border-radius: 8px; font-size: 0.82rem; box-shadow: 0 4px 12px rgba(0,0,0,0.3); animation: toastIn 0.25s ease, toastOut 0.25s ease 1.85s forwards; }
+        .toast { background: var(--panel-bg); border: 1px solid var(--border-color); color: var(--text-color); padding: 8px 14px; border-radius: 8px; font-size: 0.82rem; box-shadow: 0 4px 12px rgba(0,0,0,0.3); animation: toastIn 0.25s ease, toastOut 0.25s ease 2.35s forwards; }
+        .toast.success { border-color: var(--success-color); }
+        .toast.error { border-color: var(--danger-color); }
+        .toast.warning { border-color: var(--warning-color); }
         @keyframes toastIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
         @keyframes toastOut { from { opacity: 1; } to { opacity: 0; } }
 
-        @keyframes pulse {
-            0% { opacity: 1; }
-            50% { opacity: 0.6; }
-            100% { opacity: 1; }
-        }
+        @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.6; } 100% { opacity: 1; } }
+
+        /* MEJORA 14: Resaltado de búsqueda */
+        mark.busqueda { background: #fbbf24; color: #111; padding: 0 2px; border-radius: 3px; }
+        mark.busqueda.activo { background: #f97316; }
+
+        /* MEJORA 15: Pistas y tooltips en botones */
+        .hint { font-size: 0.7rem; color: var(--muted-color); font-style: italic; }
 
         @media (prefers-reduced-motion: reduce) {
             .icon-btn.listening, .typing-dots span, .toast { animation: none; }
+            .chat-container { scroll-behavior: auto; }
         }
 
         @media (max-width: 480px) {
@@ -143,6 +224,8 @@
             .settings-panel { width: calc(100vw - 32px); right: 16px; }
             .header-right { gap: 6px; }
             .scroll-bottom-btn { right: 16px; bottom: 165px; }
+            .emoji-picker { width: calc(100vw - 40px); right: 20px; }
+            .session-timer { display: none; }
         }
     </style>
 </head>
@@ -156,6 +239,7 @@
                 <div class="status-dot"></div>
                 <span id="statusText">Voz Inactiva</span>
             </div>
+            <span class="session-timer" id="sessionTimer" title="Tiempo en esta sesión">· 00:00</span>
         </div>
         <div class="header-right">
             <div class="modes">
@@ -165,11 +249,28 @@
                 <button class="mode-btn" onclick="setMode('Omni')">Omni</button>
                 <button class="mode-btn" onclick="setMode('Meme')">Meme</button>
             </div>
+            <button class="util-btn icon-only" onclick="alternarBusqueda()" title="Buscar en la conversación (Ctrl+F)" aria-label="Buscar en la conversación">🔍</button>
+            <button class="util-btn icon-only" onclick="abrirAtajos()" title="Atajos de teclado (?)" aria-label="Ver atajos de teclado">⌨️</button>
+            <button class="util-btn icon-only" onclick="compartirChat()" title="Compartir" aria-label="Compartir conversación">🔗</button>
+            <button class="util-btn icon-only" onclick="imprimirChat()" title="Imprimir" aria-label="Imprimir conversación">🖨️</button>
             <button class="util-btn danger" onclick="confirmarLimpiarChat(this)" title="Borrar conversación">🗑️ Limpiar</button>
-            <button class="util-btn" onclick="exportarChat()" title="Exportar conversación">⬇️ Exportar</button>
+            <button class="util-btn" onclick="abrirMenuExport()" title="Exportar conversación">⬇️ Exportar</button>
+            <button class="util-btn" onclick="importarChat()" title="Importar conversación">⬆️ Importar</button>
             <button class="util-btn" id="themeBtn" onclick="alternarTema()" title="Cambiar tema" aria-label="Cambiar entre tema claro y oscuro">🌙</button>
             <button class="util-btn" id="settingsBtn" onclick="alternarPanelAjustes()" title="Ajustes" aria-label="Abrir panel de ajustes">⚙️</button>
         </div>
+
+        <!-- MEJORA 16: Barra de búsqueda -->
+        <div class="search-bar" id="searchBar">
+            <input type="text" id="searchInput" placeholder="Buscar en la conversación..." oninput="buscarEnChat()" aria-label="Buscar mensajes">
+            <span class="search-info" id="searchInfo">0 resultados</span>
+            <button class="search-nav" onclick="navegarBusqueda(-1)" title="Anterior">▲</button>
+            <button class="search-nav" onclick="navegarBusqueda(1)" title="Siguiente">▼</button>
+            <button class="util-btn" onclick="cerrarBusqueda()">Cerrar</button>
+        </div>
+
+        <!-- MEJORA 17: Mensajes fijados -->
+        <div class="pinned-messages" id="pinnedMessages"></div>
 
         <div class="settings-panel" id="settingsPanel">
             <div class="settings-title">🔊 Voz y sonido</div>
@@ -190,13 +291,76 @@
                 <input type="range" id="pitchRange" min="0.6" max="1.4" step="0.05" onchange="guardarAjustesVoz()">
             </div>
             <div class="settings-row">
+                <label for="volumeRange">Volumen de voz</label>
+                <input type="range" id="volumeRange" min="0" max="1" step="0.05" onchange="guardarAjustesVoz()">
+            </div>
+            <div class="settings-row">
                 <label for="soundToggle">Sonido al recibir mensaje</label>
                 <input type="checkbox" id="soundToggle" onchange="guardarAjustesVoz()">
             </div>
+            <div class="settings-row">
+                <label for="beepVolumeRange">Volumen del beep</label>
+                <input type="range" id="beepVolumeRange" min="0" max="1" step="0.05" onchange="guardarAjustesVoz()">
+            </div>
+            <!-- MEJORA 18: Probar voz -->
+            <div class="btn-row">
+                <button class="util-btn" onclick="probarVoz()">🔊 Probar voz</button>
+                <button class="util-btn" onclick="detenerVoz()">⏹️ Detener</button>
+            </div>
+
+            <div class="settings-divider"></div>
+            <div class="settings-title">🎙️ Reconocimiento</div>
+            <div class="settings-row">
+                <label for="wakeWordToggle">Requiere decir "Hey Pack"</label>
+                <input type="checkbox" id="wakeWordToggle" onchange="guardarAjustesExtra()">
+            </div>
+            <div class="settings-row">
+                <label for="langSelect">Idioma de voz</label>
+                <select id="langSelect" onchange="cambiarIdiomaVoz()">
+                    <option value="es-ES">Español (España)</option>
+                    <option value="es-MX">Español (México)</option>
+                    <option value="es-AR">Español (Argentina)</option>
+                    <option value="en-US">English (US)</option>
+                    <option value="pt-BR">Português (BR)</option>
+                </select>
+            </div>
+
+            <div class="settings-divider"></div>
+            <div class="settings-title">🎨 Apariencia</div>
+            <div class="settings-row">
+                <label for="fontSizeRange">Tamaño de letra</label>
+                <input type="range" id="fontSizeRange" min="12" max="20" step="1" oninput="aplicarTamanoFuente(this.value)">
+            </div>
+            <div class="settings-row">
+                <label for="densitySelect">Densidad</label>
+                <select id="densitySelect" onchange="aplicarDensidad(this.value)">
+                    <option value="comfortable">Cómoda</option>
+                    <option value="compact">Compacta</option>
+                </select>
+            </div>
+            <div class="settings-row">
+                <label for="contrastToggle">Alto contraste</label>
+                <input type="checkbox" id="contrastToggle" onchange="aplicarContraste(this.checked)">
+            </div>
+            <div class="settings-row">
+                <label for="autoThemeToggle">Tema automático (por hora)</label>
+                <input type="checkbox" id="autoThemeToggle" onchange="guardarAjustesExtra()">
+            </div>
+
             <div class="settings-divider"></div>
             <div class="settings-title">📊 Estadísticas</div>
             <div id="statsRow">—</div>
+            <div class="btn-row">
+                <button class="util-btn" onclick="exportarEstadisticas()">⬇️ Exportar stats</button>
+                <button class="util-btn" onclick="actualizarEstadisticas()">🔄 Refrescar</button>
+            </div>
+
             <div class="settings-divider"></div>
+            <div class="settings-title">💾 Datos</div>
+            <div class="btn-row">
+                <button class="util-btn" onclick="exportarAjustes()">⬇️ Exportar ajustes</button>
+                <button class="util-btn" onclick="importarAjustes()">⬆️ Importar ajustes</button>
+            </div>
             <button class="util-btn danger" onclick="restablecerAjustes(this)">Restablecer todo</button>
         </div>
     </header>
@@ -209,6 +373,9 @@
 
     <div class="toast-container" id="toastContainer"></div>
 
+    <!-- MEJORA 19: Emoji picker -->
+    <div class="emoji-picker" id="emojiPicker"></div>
+
     <div class="chips-container">
         <button class="chip" onclick="ejecutarAccion('¿Qué hora es?')">⏰ ¿Qué hora es?</button>
         <button class="chip" onclick="ejecutarAccion('¿Qué fecha es?')">📅 ¿Qué fecha es?</button>
@@ -216,17 +383,24 @@
         <button class="chip" onclick="ejecutarAccion('abrir spotify')">🎧 Abrir Spotify</button>
         <button class="chip" onclick="ejecutarAccion('mate: 45*12+8')">🧮 Mate: 45*12+8</button>
         <button class="chip" onclick="ejecutarAccion('dado')">🎲 Tira un dado</button>
-        <button class="chip" onclick="ejecutarAccion('contraseña')">🔑 Contraseña</button>
+        <button class="chip" onclick="ejecutarAccion('contraseña 16')">🔑 Contraseña</button>
+        <button class="chip" onclick="ejecutarAccion('uuid')">🆔 UUID</button>
+        <button class="chip" onclick="ejecutarAccion('pomodoro 25')">🍅 Pomodoro</button>
+        <button class="chip" onclick="ejecutarAccion('cronometro')">⏱️ Cronómetro</button>
         <button class="chip" onclick="ejecutarAccion('cuéntame un chiste')">😂 Chiste</button>
         <button class="chip" onclick="ejecutarAccion('ayuda')">❓ Ayuda</button>
     </div>
 
     <div class="input-area">
         <button class="icon-btn" onclick="toggleVoz()" id="micBtn" title="Activar/Desactivar Micrófono" aria-label="Activar o desactivar el micrófono">🎙️</button>
-        <input type="text" id="userInput" list="comandosList" maxlength="500" placeholder="Di 'Hey Pack' o escribe aquí... (Ctrl+K)" onkeypress="handleKeyPress(event)" oninput="actualizarContador()">
+        <input type="text" id="userInput" list="comandosList" maxlength="1000" placeholder="Di 'Hey Pack' o escribe aquí... (Ctrl+K)" onkeydown="handleKeyDown(event)" oninput="actualizarContador()">
+        <button class="emoji-btn" onclick="toggleEmojiPicker()" title="Emojis" aria-label="Insertar emoji">😀</button>
         <button class="send-btn" onclick="procesarMensaje()" id="sendBtn">Enviar</button>
     </div>
-    <div class="char-counter" id="charCounter">0/500</div>
+    <div class="char-counter" id="charCounter">
+        <span class="hint" id="charHint">Ctrl+K enfoca · ↑↓ historial · ? atajos</span>
+        <span id="charCount">0/1000</span>
+    </div>
 
     <datalist id="comandosList">
         <option value="ayuda">
@@ -240,22 +414,82 @@
         <option value="mate: ">
         <option value="convierte 100 celsius a fahrenheit">
         <option value="convierte 10 km a millas">
-        <option value="dado">
-        <option value="moneda">
+        <option value="dado 20">
+        <option value="moneda 5">
         <option value="número aleatorio entre 1 y 100">
-        <option value="contraseña">
+        <option value="elige pizza, sushi, tacos">
+        <option value="contraseña 16">
+        <option value="uuid">
+        <option value="base64 codifica hola">
+        <option value="base64 decodifica aG9sYQ==">
+        <option value="url codifica hola mundo">
+        <option value="invertir texto: hola">
+        <option value="título: hola mundo">
+        <option value="slug: ¡Hola Mundo!">
         <option value="mayúsculas: ">
         <option value="minúsculas: ">
         <option value="contar palabras: ">
         <option value="nota: ">
         <option value="ver notas">
         <option value="borrar notas">
+        <option value="recordar en 10 minutos: revisar correo">
+        <option value="ver recordatorios">
         <option value="temporizador 5 minutos">
+        <option value="pomodoro 25">
+        <option value="cronometro">
+        <option value="días entre 2024-01-01 y 2024-12-31">
+        <option value="hora en tokio y madrid">
+        <option value="porcentaje 15 de 200">
         <option value="buscar en internet ">
         <option value="buscar en wikipedia ">
         <option value="estadísticas">
         <option value="cuéntame un chiste">
     </datalist>
+
+    <!-- MEJORA 20: Modal de atajos -->
+    <div class="modal-overlay" id="shortcutsModal" onclick="if(event.target===this)cerrarAtajos()">
+        <div class="modal">
+            <h2>⌨️ Atajos de teclado</h2>
+            <ul>
+                <li><span>Enfocar entrada</span><kbd>Ctrl</kbd> + <kbd>K</kbd></li>
+                <li><span>Buscar en chat</span><kbd>Ctrl</kbd> + <kbd>F</kbd></li>
+                <li><span>Ver esta ayuda</span><kbd>?</kbd></li>
+                <li><span>Cerrar modal / limpiar</span><kbd>Esc</kbd></li>
+                <li><span>Enviar mensaje</span><kbd>Enter</kbd></li>
+                <li><span>Mensaje anterior (historial)</span><kbd>↑</kbd></li>
+                <li><span>Mensaje siguiente</span><kbd>↓</kbd></li>
+                <li><span>Alternar micrófono</span><kbd>Ctrl</kbd> + <kbd>M</kbd></li>
+                <li><span>Alternar emojis</span><kbd>Ctrl</kbd> + <kbd>E</kbd></li>
+            </ul>
+            <div class="modal-actions">
+                <button class="util-btn" onclick="cerrarAtajos()">Cerrar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MEJORA 21: Modal de bienvenida / onboarding -->
+    <div class="modal-overlay" id="welcomeModal">
+        <div class="modal">
+            <h2>👋 ¡Bienvenido a EZPack AI!</h2>
+            <p style="font-size:0.9rem;line-height:1.5;margin-bottom:10px">
+                Soy tu asistente local que corre 100% en tu navegador. Puedo ayudarte con:
+            </p>
+            <ul>
+                <li><span>Hora, fecha y zonas horarias</span><span>⏰</span></li>
+                <li><span>Matemáticas avanzadas (sin, cos, log, sqrt)</span><span>🧮</span></li>
+                <li><span>Conversiones de unidades</span><span>📏</span></li>
+                <li><span>Temporizadores, pomodoro y cronómetro</span><span>🍅</span></li>
+                <li><span>Notas y recordatorios</span><span>🗒️</span></li>
+                <li><span>Utilidades: UUID, base64, contraseñas</span><span>🔑</span></li>
+            </ul>
+            <p style="font-size:0.85rem;color:var(--muted-color);margin-top:12px">
+                Escribe <b>ayuda</b> cuando quieras ver la lista completa. Presiona <kbd>?</kbd> para los atajos.
+            </p>
+            <div class="modal-actions">
+                <button class="util-btn" onclick="cerrarBienvenida()">¡Empecemos! 🚀</button>
+            </div>
+        </div>
+    </div>
 
     <script>
         /* =========================================================
@@ -270,18 +504,42 @@
         let procesando = false;
         let historial = [];
         let notas = [];
+        let recordatorios = [];
+        let pinnedMsgs = [];
         let ultimaFechaSeparador = '';
         const sessionStart = Date.now();
+        let ultimoRemitente = null; // MEJORA 22: agrupación de mensajes
+        let historialComandos = []; // MEJORA 23: historial de comandos
+        let posicionHistorial = -1;
+        let ultimaBusqueda = { termino: '', coincidencias: [], indice: 0 };
+        let pomodoroInterval = null;
+        let cronometroInterval = null;
+        let cronometroInicio = 0;
+        let cronometroAcumulado = 0;
+        let recordatorioMissed = [];
+
         const LS = {
             historial: 'ezpack_historial',
             modo: 'ezpack_modo',
             tema: 'ezpack_tema',
             notas: 'ezpack_notas',
+            recordatorios: 'ezpack_recordatorios',
+            pinneados: 'ezpack_pinneados',
+            comandos: 'ezpack_comandos',
             autospeak: 'ezpack_autospeak',
             sonido: 'ezpack_sonido',
             voz: 'ezpack_voz_uri',
             rate: 'ezpack_rate',
-            pitch: 'ezpack_pitch'
+            pitch: 'ezpack_pitch',
+            volume: 'ezpack_volume',
+            beepVolume: 'ezpack_beep_volume',
+            wakeWord: 'ezpack_wakeword',
+            lang: 'ezpack_lang',
+            fontSize: 'ezpack_font_size',
+            density: 'ezpack_density',
+            contrast: 'ezpack_contrast',
+            autoTheme: 'ezpack_auto_theme',
+            welcomeSeen: 'ezpack_welcome_seen'
         };
 
         const AVATARES = { Amigable: '😊', Mate: '🧮', Experta: '🧠', Omni: '🌐', Meme: '😎' };
@@ -290,7 +548,20 @@
             "¿Por qué los pájaros no usan Facebook? Porque ya tienen Twitter. 🐦",
             "¿Qué le dijo un semáforo a otro? No me mires que me estoy cambiando. 🚦",
             "¿Cómo se llama el campeón de buceo japonés? Tokofondo. 🤿",
-            "¿Qué hace una abeja en el gimnasio? Zum-ba. 🐝"
+            "¿Qué hace una abeja en el gimnasio? Zum-ba. 🐝",
+            "—¿Cuál es tu libro favorito? —El de la biblioteca, porque tiene muchos tomos. 📚",
+            "¿Qué le dijo una pared a la otra? Nos vemos en la esquina. 🧱",
+            "—Doctor, me duele aquí. —Pues no se toque ahí. 🩺",
+            "¿Cómo se despiden los químicos? Ácido un placer. 🧪"
+        ];
+
+        const FRASES_MEME = [
+            '¡Claro que sí, crack! Aquí andamos al 100 y listos para lo que se ofrezca Bv 😎📦',
+            'Ese comentario está OP nivel máximo, cuéntame más plz 😎🎮',
+            'Modo bestia activado, vamos con toda 🔥😎',
+            'F en el chat por lo épico que acabas de decir 🫡😎',
+            'Real, no cap. 100% contigo 🧢😎',
+            'Ahí te va el pack completo de buena vibra 📦✨😎'
         ];
 
         const CIUDADES_TZ = {
@@ -302,11 +573,23 @@
             'ciudad de mexico': 'America/Mexico_City',
             'cdmx': 'America/Mexico_City',
             'buenos aires': 'America/Argentina/Buenos_Aires',
-            'paris': 'Europe/Paris'
+            'paris': 'Europe/Paris',
+            'berlin': 'Europe/Berlin',
+            'moscu': 'Europe/Moscow',
+            'dubai': 'Asia/Dubai',
+            'shanghai': 'Asia/Shanghai',
+            'sidney': 'Australia/Sydney',
+            'sydney': 'Australia/Sydney',
+            'sao paulo': 'America/Sao_Paulo',
+            'bogota': 'America/Bogota',
+            'lima': 'America/Lima',
+            'santiago': 'America/Santiago'
         };
 
+        const EMOJIS = ['😀','😁','😂','🤣','😊','😇','🙂','🙃','😉','😍','🥰','😘','😎','🤩','🥳','🤔','🤨','😐','😴','😢','😭','😤','😡','🤯','😱','🥶','🤗','🤫','🤭','🤗','🧐','🤓','😈','👻','💀','👽','🤖','🎃','😺','😸','🙈','🙉','🙊','💩','👍','👎','👏','🙌','🤝','🙏','💪','✌️','🤞','👋','🖐️','✋','👌','🤌','🤟','👊','✊','🫶','❤️','🧡','💛','💚','💙','💜','🖤','🤍','💔','❣️','💕','💞','💓','💗','💖','💘','💝','✨','⭐','🌟','💫','⚡','🔥','💥','💯','✅','❌','⚠️','🚀','📦','🎉','🎊','🎁','🏆','🥇','🍕','🍔','🌮','🍣','☕','🍺','🍩','🍪','⚽','🏀','🎮','🎧','🎵','📚','💻','📱','⏰','⏱️','🎲','🎯','🔑','🔒','🗒️','📅','📍','🌍','🌙','☀️','☁️','⛅','🌧️','❄️','🌈'];
+
         /* =========================================================
-           UTILIDADES
+           UTILIDADES GENERALES
         ========================================================= */
         function normalizar(t) {
             return t.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
@@ -326,24 +609,53 @@
             return fecha.toLocaleDateString('es-ES', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
         }
 
-        function mostrarToast(texto) {
+        function formatearDuracion(ms) {
+            const s = Math.floor(ms / 1000);
+            const h = Math.floor(s / 3600);
+            const m = Math.floor((s % 3600) / 60);
+            const seg = s % 60;
+            if (h > 0) return `${h}h ${m}m ${seg}s`;
+            if (m > 0) return `${m}m ${seg}s`;
+            return `${seg}s`;
+        }
+
+        // MEJORA 24: toasts con tipos
+        function mostrarToast(texto, tipo = 'info') {
             const cont = document.getElementById('toastContainer');
             const toast = document.createElement('div');
-            toast.className = 'toast';
+            toast.className = 'toast ' + tipo;
             toast.textContent = texto;
             cont.appendChild(toast);
-            setTimeout(() => toast.remove(), 2100);
+            setTimeout(() => toast.remove(), 2700);
+        }
+
+        // MEJORA 25: Notificaciones del navegador
+        function notificar(titulo, cuerpo) {
+            try {
+                if ('Notification' in window && Notification.permission === 'granted') {
+                    new Notification(titulo, { body: cuerpo, icon: 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><text y=".9em" font-size="90">📦</text></svg>' });
+                }
+            } catch (e) {}
+        }
+
+        function pedirPermisoNotificaciones() {
+            try {
+                if ('Notification' in window && Notification.permission === 'default') {
+                    Notification.requestPermission();
+                }
+            } catch (e) {}
         }
 
         function reproducirBeep() {
             if (!(localStorage.getItem(LS.sonido) === 'true')) return;
             try {
                 const ctx = new (window.AudioContext || window.webkitAudioContext)();
+                const vol = parseFloat(localStorage.getItem(LS.beepVolume) || '0.08');
                 const osc = ctx.createOscillator();
                 const gain = ctx.createGain();
                 osc.type = 'sine';
                 osc.frequency.value = 660;
-                gain.gain.setValueAtTime(0.08, ctx.currentTime);
+                gain.gain.setValueAtTime(vol, ctx.currentTime);
                 gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.35);
                 osc.connect(gain).connect(ctx.destination);
                 osc.start();
@@ -352,7 +664,39 @@
         }
 
         /* =========================================================
-           TEMA CLARO / OSCURO
+           MEJORA 26: Markdown-lite seguro
+        ========================================================= */
+        function renderizarMarkdown(texto) {
+            let html = escaparHTML(texto);
+            // Code blocks (```...```)
+            html = html.replace(/```([\s\S]*?)```/g, (m, c) =>
+                `<pre class="code-block"><button class="copy-code-btn" onclick="copiarCodigo(this)">📋</button><code>${c.replace(/^\n/, '').trim()}</code></pre>`);
+            // Inline code
+            html = html.replace(/`([^`\n]+)`/g, '<code class="inline-code">$1</code>');
+            // Bold
+            html = html.replace(/\*\*([^*\n]+)\*\*/g, '<b>$1</b>');
+            // Italic
+            html = html.replace(/(^|[^*])\*([^*\n]+)\*(?!\*)/g, '$1<i>$2</i>');
+            // Links [text](url)
+            html = html.replace(/\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/g, '<a href="$2" target="_blank" rel="noopener noreferrer">$1</a>');
+            // Auto-links
+            html = html.replace(/(^|[\s>])(https?:\/\/[^\s<]+)/g, '$1<a href="$2" target="_blank" rel="noopener noreferrer">$2</a>');
+            // Line breaks
+            html = html.replace(/\n/g, '<br>');
+            return html;
+        }
+
+        function copiarCodigo(btn) {
+            const code = btn.parentElement.querySelector('code');
+            if (!code) return;
+            const t = code.textContent;
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                navigator.clipboard.writeText(t).then(() => mostrarToast('Código copiado ✅', 'success'));
+            }
+        }
+
+        /* =========================================================
+           TEMA CLARO / OSCURO / CONTRASTE / TIPOGRAFÍA
         ========================================================= */
         function aplicarTema(tema) {
             document.documentElement.setAttribute('data-theme', tema);
@@ -368,6 +712,29 @@
             localStorage.setItem(LS.tema, nuevo);
         }
 
+        // MEJORA 27: Tema automático por hora
+        function aplicarTemaAutomatico() {
+            if (localStorage.getItem(LS.autoTheme) !== 'true') return;
+            const h = new Date().getHours();
+            const tema = (h >= 7 && h < 19) ? 'light' : 'dark';
+            aplicarTema(tema);
+        }
+
+        function aplicarTamanoFuente(px) {
+            document.documentElement.style.setProperty('--font-size-base', px + 'px');
+            localStorage.setItem(LS.fontSize, px);
+        }
+
+        function aplicarDensidad(d) {
+            document.documentElement.setAttribute('data-density', d);
+            localStorage.setItem(LS.density, d);
+        }
+
+        function aplicarContraste(act) {
+            document.documentElement.setAttribute('data-contrast', act ? 'high' : 'normal');
+            localStorage.setItem(LS.contrast, act ? 'true' : 'false');
+        }
+
         /* =========================================================
            VOZ: SÍNTESIS Y RECONOCIMIENTO
         ========================================================= */
@@ -377,15 +744,16 @@
             const select = document.getElementById('voiceSelect');
             if (!select) return;
             const vozGuardada = localStorage.getItem(LS.voz);
+            const lang = localStorage.getItem(LS.lang) || 'es';
             select.innerHTML = '';
             const optAuto = document.createElement('option');
             optAuto.value = '';
             optAuto.textContent = 'Automática (recomendada)';
             select.appendChild(optAuto);
-            listaVoces.filter(v => v.lang.startsWith('es')).forEach(v => {
+            listaVoces.filter(v => v.lang.toLowerCase().startsWith(lang.substring(0,2))).forEach(v => {
                 const opt = document.createElement('option');
                 opt.value = v.voiceURI;
-                opt.textContent = v.name;
+                opt.textContent = `${v.name} (${v.lang})`;
                 if (v.voiceURI === vozGuardada) opt.selected = true;
                 select.appendChild(opt);
             });
@@ -393,21 +761,20 @@
 
         if (synth) {
             cargarVoces();
-            if (synth.onvoiceschanged !== undefined) {
-                synth.onvoiceschanged = cargarVoces;
-            }
+            if (synth.onvoiceschanged !== undefined) synth.onvoiceschanged = cargarVoces;
         }
 
         if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
             const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
             recognition = new SpeechRecognition();
-            recognition.lang = 'es-ES';
+            recognition.lang = localStorage.getItem(LS.lang) || 'es-ES';
             recognition.continuous = false;
             recognition.interimResults = false;
 
             recognition.onresult = function (event) {
                 const textoTranscrito = event.results[0][0].transcript;
                 document.getElementById('userInput').value = textoTranscrito;
+                actualizarContador();
                 procesarMensaje();
             };
 
@@ -415,10 +782,17 @@
                 if (e.error === 'not-allowed' || e.error === 'service-not-allowed') {
                     vozActiva = false;
                     actualizarBadgeVoz();
-                    mostrarToast('No pude acceder al micrófono. Revisa los permisos del navegador.');
+                    mostrarToast('No pude acceder al micrófono. Revisa los permisos.', 'error');
                 }
             };
             recognition.onend = function () { reiniciarEscuchaSiActiva(); };
+        }
+
+        function cambiarIdiomaVoz() {
+            const lang = document.getElementById('langSelect').value;
+            localStorage.setItem(LS.lang, lang);
+            if (recognition) recognition.lang = lang;
+            cargarVoces();
         }
 
         function actualizarBadgeVoz() {
@@ -439,11 +813,11 @@
         function toggleVoz() {
             vozActiva = !vozActiva;
             actualizarBadgeVoz();
-
             if (vozActiva) {
                 if (recognition) {
                     try { recognition.start(); escuchandoVoz = true; } catch (e) {}
                 }
+                pedirPermisoNotificaciones();
             } else {
                 if (recognition && escuchandoVoz) {
                     try { recognition.stop(); } catch (e) {}
@@ -460,37 +834,39 @@
             }
         }
 
+        // MEJORA 28: voz con volumen
         function hablar(texto) {
             if (!synth) return;
             synth.cancel();
-            let utterThis = new SpeechSynthesisUtterance(texto);
-            utterThis.lang = 'es-ES';
+            const utterThis = new SpeechSynthesisUtterance(texto);
+            utterThis.lang = localStorage.getItem(LS.lang) || 'es-ES';
             utterThis.rate = parseFloat(localStorage.getItem(LS.rate)) || 0.95;
             utterThis.pitch = parseFloat(localStorage.getItem(LS.pitch)) || 1.05;
+            utterThis.volume = parseFloat(localStorage.getItem(LS.volume)) || 1;
 
             if (listaVoces.length === 0) cargarVoces();
-
             const vozGuardada = localStorage.getItem(LS.voz);
-            let vozSeleccionada = null;
-            if (vozGuardada) vozSeleccionada = listaVoces.find(v => v.voiceURI === vozGuardada);
-            if (!vozSeleccionada) {
-                vozSeleccionada = listaVoces.find(v => v.lang.includes('es') && (v.name.includes('Google') || v.name.includes('Natural') || v.name.includes('Helena') || v.name.includes('Laura')));
+            let vozSel = vozGuardada ? listaVoces.find(v => v.voiceURI === vozGuardada) : null;
+            if (!vozSel) {
+                vozSel = listaVoces.find(v => v.lang.includes('es') && (v.name.includes('Google') || v.name.includes('Natural') || v.name.includes('Helena') || v.name.includes('Laura') || v.name.includes('Mónica')));
             }
-            if (!vozSeleccionada) {
-                vozSeleccionada = listaVoces.find(v => v.lang.startsWith('es'));
-            }
-            if (vozSeleccionada) utterThis.voice = vozSeleccionada;
-
+            if (!vozSel) vozSel = listaVoces.find(v => v.lang.startsWith('es'));
+            if (vozSel) utterThis.voice = vozSel;
             synth.speak(utterThis);
         }
 
-        function detenerVoz() {
-            if (synth) synth.cancel();
-        }
+        function detenerVoz() { if (synth) synth.cancel(); }
+        function pausarVoz() { if (synth && synth.speaking && !synth.paused) synth.pause(); }
+        function reanudarVoz() { if (synth && synth.paused) synth.resume(); }
 
         function hablarTexto(btn) {
             const messageDiv = btn.closest('.message-wrapper').querySelector('.message');
             if (messageDiv) hablar(messageDiv.innerText);
+        }
+
+        // MEJORA 29: probar voz
+        function probarVoz() {
+            hablar('Hola, soy EZPack AI. Así suena mi voz con la configuración actual. 📦✨');
         }
 
         function copiarTexto(btn) {
@@ -498,19 +874,33 @@
             if (!messageDiv) return;
             const texto = messageDiv.innerText;
             if (navigator.clipboard && navigator.clipboard.writeText) {
-                navigator.clipboard.writeText(texto).then(() => mostrarToast('Copiado al portapapeles ✅')).catch(() => mostrarToast('No se pudo copiar'));
+                navigator.clipboard.writeText(texto)
+                    .then(() => mostrarToast('Copiado al portapapeles ✅', 'success'))
+                    .catch(() => mostrarToast('No se pudo copiar', 'error'));
             } else {
-                mostrarToast('Tu navegador no permite copiar automáticamente');
+                mostrarToast('Tu navegador no permite copiar automáticamente', 'warning');
             }
         }
 
         /* =========================================================
-           PANEL DE AJUSTES
+           PANEL DE AJUSTES Y UTILIDADES
         ========================================================= */
         function alternarPanelAjustes() {
             const panel = document.getElementById('settingsPanel');
             panel.classList.toggle('open');
-            if (panel.classList.contains('open')) actualizarEstadisticas();
+            if (panel.classList.contains('open')) {
+                actualizarEstadisticas();
+                sincronizarControlesAjustes();
+            }
+        }
+
+        function sincronizarControlesAjustes() {
+            document.getElementById('fontSizeRange').value = localStorage.getItem(LS.fontSize) || '15';
+            document.getElementById('densitySelect').value = localStorage.getItem(LS.density) || 'comfortable';
+            document.getElementById('contrastToggle').checked = localStorage.getItem(LS.contrast) === 'true';
+            document.getElementById('autoThemeToggle').checked = localStorage.getItem(LS.autoTheme) === 'true';
+            document.getElementById('wakeWordToggle').checked = localStorage.getItem(LS.wakeWord) === 'true';
+            document.getElementById('langSelect').value = localStorage.getItem(LS.lang) || 'es-ES';
         }
 
         function guardarAjustesVoz() {
@@ -519,6 +909,14 @@
             localStorage.setItem(LS.voz, document.getElementById('voiceSelect').value);
             localStorage.setItem(LS.rate, document.getElementById('rateRange').value);
             localStorage.setItem(LS.pitch, document.getElementById('pitchRange').value);
+            localStorage.setItem(LS.volume, document.getElementById('volumeRange').value);
+            localStorage.setItem(LS.beepVolume, document.getElementById('beepVolumeRange').value);
+        }
+
+        function guardarAjustesExtra() {
+            localStorage.setItem(LS.wakeWord, document.getElementById('wakeWordToggle').checked);
+            localStorage.setItem(LS.autoTheme, document.getElementById('autoThemeToggle').checked);
+            aplicarTemaAutomatico();
         }
 
         function cargarAjustesVoz() {
@@ -526,25 +924,58 @@
             document.getElementById('soundToggle').checked = localStorage.getItem(LS.sonido) === 'true';
             document.getElementById('rateRange').value = localStorage.getItem(LS.rate) || '0.95';
             document.getElementById('pitchRange').value = localStorage.getItem(LS.pitch) || '1.05';
+            document.getElementById('volumeRange').value = localStorage.getItem(LS.volume) || '1';
+            document.getElementById('beepVolumeRange').value = localStorage.getItem(LS.beepVolume) || '0.08';
+        }
+
+        // MEJORA 30: estadísticas ampliadas
+        function calcularEstadisticas() {
+            const mensajesUsuario = historial.filter(m => m.tipo === 'user').length;
+            const mensajesIA = historial.filter(m => m.tipo === 'ai').length;
+            const caracteresUsuario = historial.filter(m => m.tipo === 'user').reduce((a, m) => a + m.contenido.replace(/<[^>]*>?/gm, '').length, 0);
+            const caracteresIA = historial.filter(m => m.tipo === 'ai').reduce((a, m) => a + m.contenido.replace(/<[^>]*>?/gm, '').length, 0);
+            const minutos = Math.max(1, Math.round((Date.now() - sessionStart) / 60000));
+            const palabras = historial.reduce((a, m) => a + m.contenido.replace(/<[^>]*>?/gm, '').split(/\s+/).filter(Boolean).length, 0);
+            return { mensajesUsuario, mensajesIA, caracteresUsuario, caracteresIA, minutos, palabras };
         }
 
         function actualizarEstadisticas() {
-            const mensajesUsuario = historial.filter(m => m.tipo === 'user').length;
-            const mensajesIA = historial.filter(m => m.tipo === 'ai').length;
-            const minutos = Math.max(1, Math.round((Date.now() - sessionStart) / 60000));
+            const s = calcularEstadisticas();
             document.getElementById('statsRow').innerHTML =
-                `Mensajes tuyos: <b>${mensajesUsuario}</b><br>Respuestas de EZPack: <b>${mensajesIA}</b><br>Tiempo en esta sesión: <b>${minutos} min</b>`;
+                `Mensajes tuyos: <b>${s.mensajesUsuario}</b><br>` +
+                `Respuestas de EZPack: <b>${s.mensajesIA}</b><br>` +
+                `Palabras totales: <b>${s.palabras}</b><br>` +
+                `Caracteres (tú/IA): <b>${s.caracteresUsuario}/${s.caracteresIA}</b><br>` +
+                `Notas guardadas: <b>${notas.length}</b><br>` +
+                `Recordatorios activos: <b>${recordatorios.length}</b><br>` +
+                `Mensajes fijados: <b>${pinnedMsgs.length}</b><br>` +
+                `Tiempo en esta sesión: <b>${s.minutos} min</b>`;
+        }
+
+        function exportarEstadisticas() {
+            const s = calcularEstadisticas();
+            const data = {
+                fecha: new Date().toISOString(),
+                modoActual,
+                ...s,
+                notas: notas.length,
+                recordatorios: recordatorios.length
+            };
+            const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `ezpack-stats-${new Date().toISOString().slice(0, 10)}.json`;
+            document.body.appendChild(a); a.click(); a.remove();
+            URL.revokeObjectURL(url);
+            mostrarToast('Estadísticas exportadas ⬇️', 'success');
         }
 
         /* =========================================================
-           CONFIRMACIÓN DE ACCIONES DESTRUCTIVAS (sin window.confirm)
-           window.confirm() no funciona en varios navegadores embebidos
-           o vistas previas (se bloquea en silencio y cancela la acción
-           sin avisar). Por eso las acciones que borran datos usan esta
-           confirmación de "doble clic" dentro de la propia app.
+           CONFIRMACIÓN DOBLE (evita window.confirm)
         ========================================================= */
         function confirmarAccionDoble(boton, textoArmado, callback, msArmado = 4000) {
-            if (!boton) { callback(); return; } // si no hay botón disponible, no bloqueamos la acción
+            if (!boton) { callback(); return; }
             if (boton.dataset.armado === '1') {
                 clearTimeout(boton._temporizadorConfirm);
                 boton.dataset.armado = '0';
@@ -555,7 +986,7 @@
             if (boton.dataset.textoOriginal === undefined) boton.dataset.textoOriginal = boton.innerHTML;
             boton.dataset.armado = '1';
             boton.innerHTML = textoArmado;
-            mostrarToast('Presiona de nuevo para confirmar');
+            mostrarToast('Presiona de nuevo para confirmar', 'warning');
             boton._temporizadorConfirm = setTimeout(() => {
                 boton.dataset.armado = '0';
                 boton.innerHTML = boton.dataset.textoOriginal;
@@ -565,9 +996,42 @@
         function restablecerAjustes(boton) {
             confirmarAccionDoble(boton, '⚠️ ¿Confirmar?', () => {
                 Object.values(LS).forEach(k => localStorage.removeItem(k));
-                mostrarToast('Ajustes restablecidos. Recargando...');
+                mostrarToast('Ajustes restablecidos. Recargando...', 'success');
                 setTimeout(() => location.reload(), 800);
             });
+        }
+
+        function exportarAjustes() {
+            const data = {};
+            Object.values(LS).forEach(k => { const v = localStorage.getItem(k); if (v !== null) data[k] = v; });
+            const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url; a.download = 'ezpack-ajustes.json';
+            document.body.appendChild(a); a.click(); a.remove();
+            URL.revokeObjectURL(url);
+            mostrarToast('Ajustes exportados ⬇️', 'success');
+        }
+
+        function importarAjustes() {
+            const input = document.createElement('input');
+            input.type = 'file'; input.accept = '.json';
+            input.onchange = () => {
+                const file = input.files[0]; if (!file) return;
+                const reader = new FileReader();
+                reader.onload = e => {
+                    try {
+                        const data = JSON.parse(e.target.result);
+                        Object.entries(data).forEach(([k, v]) => localStorage.setItem(k, v));
+                        mostrarToast('Ajustes importados ✅', 'success');
+                        setTimeout(() => location.reload(), 700);
+                    } catch (err) {
+                        mostrarToast('Archivo inválido', 'error');
+                    }
+                };
+                reader.readAsText(file);
+            };
+            input.click();
         }
 
         /* =========================================================
@@ -581,7 +1045,7 @@
             });
             const descripciones = {
                 Amigable: 'Modo Amigable: charla cercana y cálida. 😊',
-                Mate: 'Modo Mate: enfocado en resolver operaciones matemáticas. Ahora puedes escribir la operación directamente (ej. 45*12+8) sin necesidad de anteponer "mate:". 🧮',
+                Mate: 'Modo Mate: enfocado en resolver operaciones. Puedes escribir la operación directamente (ej. 45*12+8) o con "mate:". 🧮',
                 Experta: 'Modo Experta: respuestas más técnicas y directas. 🧠',
                 Omni: 'Modo Omni: considera todo el contexto disponible. 🌐',
                 Meme: 'Modo Meme: puro relajo y jerga. 😎'
@@ -590,10 +1054,35 @@
         }
 
         /* =========================================================
-           RENDER DE MENSAJES, HISTORIAL Y SEPARADORES DE FECHA
+           INPUT: TECLADO, CONTADOR, HISTORIAL
         ========================================================= */
-        function handleKeyPress(e) {
-            if (e.key === 'Enter') procesarMensaje();
+        function handleKeyDown(e) {
+            const input = document.getElementById('userInput');
+            // MEJORA 31: historial de comandos con ↑↓
+            if (e.key === 'ArrowUp' && historialComandos.length > 0) {
+                e.preventDefault();
+                if (posicionHistorial === -1) posicionHistorial = historialComandos.length;
+                posicionHistorial = Math.max(0, posicionHistorial - 1);
+                input.value = historialComandos[posicionHistorial];
+                actualizarContador();
+                return;
+            }
+            if (e.key === 'ArrowDown' && posicionHistorial !== -1) {
+                e.preventDefault();
+                posicionHistorial++;
+                if (posicionHistorial >= historialComandos.length) {
+                    posicionHistorial = -1;
+                    input.value = '';
+                } else {
+                    input.value = historialComandos[posicionHistorial];
+                }
+                actualizarContador();
+                return;
+            }
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                procesarMensaje();
+            }
         }
 
         function ejecutarAccion(texto) {
@@ -605,12 +1094,16 @@
         function actualizarContador() {
             const input = document.getElementById('userInput');
             const contador = document.getElementById('charCounter');
+            const span = document.getElementById('charCount');
             const len = input.value.length;
-            contador.textContent = `${len}/500`;
-            contador.classList.toggle('warning', len > 400 && len <= 480);
-            contador.classList.toggle('limit', len > 480);
+            span.textContent = `${len}/1000`;
+            contador.classList.toggle('warning', len > 800 && len <= 950);
+            contador.classList.toggle('limit', len > 950);
         }
 
+        /* =========================================================
+           RENDER, HISTORIAL Y SEPARADORES DE FECHA
+        ========================================================= */
         function insertarSeparadorFechaSiCorresponde(fechaObj) {
             const clave = fechaObj.toDateString();
             if (clave === ultimaFechaSeparador) return;
@@ -635,9 +1128,14 @@
             badge.textContent = '';
         }
 
-        function crearWrapperMensaje(contenidoFinal, tipo, horaStr, avatar) {
+        // MEJORA 32: wrapper con botones extra (fijar, eliminar)
+        function crearWrapperMensaje(contenidoFinal, tipo, horaStr, avatar, msgId = null) {
             const wrapper = document.createElement('div');
             wrapper.className = `message-wrapper ${tipo}`;
+            if (msgId) wrapper.dataset.msgId = msgId;
+            // MEJORA 33: agrupación por remitente consecutivo
+            if (tipo === ultimoRemitente) wrapper.classList.add('grouped');
+            ultimoRemitente = tipo;
 
             const meta = document.createElement('div');
             meta.className = 'message-meta';
@@ -649,48 +1147,58 @@
             msgDiv.innerHTML = contenidoFinal;
             wrapper.appendChild(msgDiv);
 
-            if (tipo === 'ai') {
-                const actions = document.createElement('div');
-                actions.className = 'msg-actions';
+            const actions = document.createElement('div');
+            actions.className = 'msg-actions';
 
+            if (tipo === 'ai') {
                 const audioBtn = document.createElement('button');
                 audioBtn.className = 'speak-msg-btn';
                 audioBtn.innerHTML = '🔊 Escuchar';
-                audioBtn.setAttribute('aria-label', 'Escuchar este mensaje');
                 audioBtn.onclick = function () { hablarTexto(this); };
                 actions.appendChild(audioBtn);
 
                 const stopBtn = document.createElement('button');
                 stopBtn.className = 'stop-msg-btn';
                 stopBtn.innerHTML = '⏹️ Detener';
-                stopBtn.setAttribute('aria-label', 'Detener lectura en voz alta');
                 stopBtn.onclick = detenerVoz;
                 actions.appendChild(stopBtn);
-
-                const copyBtn = document.createElement('button');
-                copyBtn.className = 'copy-msg-btn';
-                copyBtn.innerHTML = '📋 Copiar';
-                copyBtn.setAttribute('aria-label', 'Copiar este mensaje');
-                copyBtn.onclick = function () { copiarTexto(this); };
-                actions.appendChild(copyBtn);
-
-                wrapper.appendChild(actions);
             }
 
+            const copyBtn = document.createElement('button');
+            copyBtn.className = 'copy-msg-btn';
+            copyBtn.innerHTML = '📋 Copiar';
+            copyBtn.onclick = function () { copiarTexto(this); };
+            actions.appendChild(copyBtn);
+
+            const pinBtn = document.createElement('button');
+            pinBtn.className = 'pin-msg-btn';
+            pinBtn.innerHTML = '📌 Fijar';
+            pinBtn.onclick = function () { togglePin(this); };
+            actions.appendChild(pinBtn);
+
+            const delBtn = document.createElement('button');
+            delBtn.className = 'del-msg-btn';
+            delBtn.innerHTML = '🗑️';
+            delBtn.title = 'Eliminar mensaje';
+            delBtn.onclick = function () { eliminarMensaje(this); };
+            actions.appendChild(delBtn);
+
+            wrapper.appendChild(actions);
             return wrapper;
         }
 
         function agregarMensaje(texto, tipo, esHTML = false, guardar = true) {
-            const contenidoFinal = esHTML ? texto : escaparHTML(texto);
+            const contenidoFinal = esHTML ? texto : renderizarMarkdown(texto);
             const ahora = new Date();
             const horaStr = horaCorta(ahora);
             const avatar = tipo === 'ai' ? AVATARES[modoActual] : null;
+            const msgId = 'm' + Date.now() + Math.random().toString(36).slice(2, 6);
 
             const container = document.getElementById('chatContainer');
             const alFinalAntes = estaAlFinal();
 
             insertarSeparadorFechaSiCorresponde(ahora);
-            const wrapper = crearWrapperMensaje(contenidoFinal, tipo, horaStr, avatar);
+            const wrapper = crearWrapperMensaje(contenidoFinal, tipo, horaStr, avatar, msgId);
             container.appendChild(wrapper);
 
             if (alFinalAntes || tipo === 'user') {
@@ -705,12 +1213,27 @@
             }
 
             if (guardar) {
-                historial.push({ tipo, contenido: contenidoFinal, hora: horaStr, avatar, fecha: ahora.toDateString() });
-                if (historial.length > 150) historial = historial.slice(-150);
-                localStorage.setItem(LS.historial, JSON.stringify(historial));
+                historial.push({ id: msgId, tipo, contenido: contenidoFinal, hora: horaStr, avatar, fecha: ahora.toDateString() });
+                if (historial.length > 300) historial = historial.slice(-300);
+                guardarHistorial();
             }
-
             return wrapper;
+        }
+
+        // MEJORA 34: manejo de quota de localStorage
+        function guardarHistorial() {
+            try {
+                localStorage.setItem(LS.historial, JSON.stringify(historial));
+            } catch (e) {
+                // Quota excedida: recortar
+                historial = historial.slice(-100);
+                try {
+                    localStorage.setItem(LS.historial, JSON.stringify(historial));
+                    mostrarToast('Historial recortado por límite de almacenamiento', 'warning');
+                } catch (e2) {
+                    mostrarToast('No se pudo guardar el historial', 'error');
+                }
+            }
         }
 
         document.getElementById('chatContainer').addEventListener('scroll', () => {
@@ -721,55 +1244,400 @@
             confirmarAccionDoble(boton, '⚠️ ¿Confirmar?', limpiarChat);
         }
 
+        // MEJORA 35: backup para deshacer
+        let backupHistorial = null;
         function limpiarChat() {
+            backupHistorial = historial.slice();
             detenerVoz();
             historial = [];
             ultimaFechaSeparador = '';
+            ultimoRemitente = null;
             localStorage.removeItem(LS.historial);
             document.getElementById('chatContainer').innerHTML = '';
             mostrarSaludoInicial(false);
-            mostrarToast('Conversación borrada');
+            mostrarDeshacer('Conversación borrada');
         }
 
-        function exportarChat() {
-            if (historial.length === 0) {
-                mostrarToast('No hay conversación para exportar');
-                return;
-            }
+        function mostrarDeshacer(mensaje) {
+            const cont = document.getElementById('toastContainer');
+            const toast = document.createElement('div');
+            toast.className = 'toast warning';
+            toast.style.pointerEvents = 'auto';
+            toast.innerHTML = `${mensaje} <button style="margin-left:8px;background:var(--accent-color);color:#fff;border:none;padding:3px 8px;border-radius:5px;cursor:pointer" onclick="deshacerLimpiar()">Deshacer</button>`;
+            cont.appendChild(toast);
+            setTimeout(() => toast.remove(), 6000);
+        }
+
+        function deshacerLimpiar() {
+            if (!backupHistorial) return;
+            historial = backupHistorial;
+            backupHistorial = null;
+            guardarHistorial();
+            document.getElementById('chatContainer').innerHTML = '';
+            ultimaFechaSeparador = '';
+            ultimoRemitente = null;
+            historial.forEach(m => {
+                const fechaObj = new Date(m.fecha);
+                insertarSeparadorFechaSiCorresponde(isNaN(fechaObj) ? new Date() : fechaObj);
+                const wrapper = crearWrapperMensaje(m.contenido, m.tipo, m.hora, m.avatar, m.id);
+                document.getElementById('chatContainer').appendChild(wrapper);
+            });
+            irAlFinal();
+            mostrarToast('Conversación restaurada ✅', 'success');
+        }
+
+        /* =========================================================
+           MEJORA 36-38: Exportaciones (TXT, JSON, MD, HTML)
+        ========================================================= */
+        function abrirMenuExport() {
+            const opcion = prompt('Exportar como: escribe "txt", "json", "md" o "html"', 'txt');
+            if (!opcion) return;
+            const o = opcion.toLowerCase().trim();
+            if (o === 'txt') exportarTXT();
+            else if (o === 'json') exportarJSON();
+            else if (o === 'md') exportarMD();
+            else if (o === 'html') exportarHTMLChat();
+            else mostrarToast('Formato no válido', 'error');
+        }
+
+        function exportarTXT() {
+            if (historial.length === 0) return mostrarToast('No hay conversación', 'warning');
             const lineas = historial.map(m => {
                 const quien = m.tipo === 'user' ? 'Tú' : 'EZPack AI';
                 const textoPlano = m.contenido.replace(/<[^>]*>?/gm, '');
                 return `[${m.hora}] ${quien}: ${textoPlano}`;
             });
-            const blob = new Blob([lineas.join('\n')], { type: 'text/plain;charset=utf-8' });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = `ezpack-chat-${new Date().toISOString().slice(0, 10)}.txt`;
-            document.body.appendChild(a);
-            a.click();
-            a.remove();
-            URL.revokeObjectURL(url);
-            mostrarToast('Conversación exportada ⬇️');
+            descargarArchivo(lineas.join('\n'), `ezpack-chat-${fechaISO()}.txt`, 'text/plain');
         }
 
-        function mostrarSaludoInicial(guardar) {
-            const hora = new Date().getHours();
-            let saludo = 'Buenas noches';
-            if (hora >= 6 && hora < 12) saludo = 'Buenos días';
-            else if (hora >= 12 && hora < 20) saludo = 'Buenas tardes';
-            agregarMensaje(
-                `¡${saludo}! Qué gusto saludarte. Di o escribe <b>"Hey Pack"</b> para que platiquemos, pregunta la hora o fecha, consulta juegos, pide un chiste o usa el modo Mate. Escribe <b>"ayuda"</b> si quieres ver todo lo que sé hacer. ¡Aquí estoy para ayudarte! 😊`,
-                'ai', true, guardar
-            );
+        function exportarJSON() {
+            if (historial.length === 0) return mostrarToast('No hay conversación', 'warning');
+            descargarArchivo(JSON.stringify({ exportado: new Date().toISOString(), modo: modoActual, historial }, null, 2), `ezpack-chat-${fechaISO()}.json`, 'application/json');
+        }
+
+        function exportarMD() {
+            if (historial.length === 0) return mostrarToast('No hay conversación', 'warning');
+            const lineas = [`# Conversación EZPack AI`, `_Exportada el ${new Date().toLocaleString('es-ES')}_`, ``];
+            historial.forEach(m => {
+                const quien = m.tipo === 'user' ? '**Tú**' : '**EZPack AI**';
+                const texto = m.contenido.replace(/<[^>]*>?/gm, '');
+                lineas.push(`### ${quien} — ${m.hora}`);
+                lineas.push(texto);
+                lineas.push('');
+            });
+            descargarArchivo(lineas.join('\n'), `ezpack-chat-${fechaISO()}.md`, 'text/markdown');
+        }
+
+        function exportarHTMLChat() {
+            if (historial.length === 0) return mostrarToast('No hay conversación', 'warning');
+            const filas = historial.map(m => {
+                const quien = m.tipo === 'user' ? 'Tú' : 'EZPack AI';
+                return `<div class="msg ${m.tipo}"><div class="meta">${quien} · ${m.hora}</div><div>${m.contenido}</div></div>`;
+            }).join('\n');
+            const html = `<!DOCTYPE html><html><head><meta charset="utf-8"><title>EZPack AI - Chat</title><style>
+                body{font-family:system-ui,sans-serif;background:#0b0f19;color:#f3f4f6;padding:20px;max-width:800px;margin:auto}
+                .msg{padding:10px 14px;border-radius:10px;margin:8px 0}
+                .msg.user{background:#1d4ed8;margin-left:auto;max-width:70%}
+                .msg.ai{background:#1f2937;max-width:70%}
+                .meta{font-size:0.75rem;opacity:0.7;margin-bottom:4px}
+                pre{background:#0d1117;padding:10px;border-radius:6px;overflow-x:auto}
+                a{color:#93c5fd}
+            </style></head><body><h1>📦 Conversación EZPack AI</h1>${filas}</body></html>`;
+            descargarArchivo(html, `ezpack-chat-${fechaISO()}.html`, 'text/html');
+        }
+
+        function descargarArchivo(contenido, nombre, tipo) {
+            const blob = new Blob([contenido], { type: tipo + ';charset=utf-8' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url; a.download = nombre;
+            document.body.appendChild(a); a.click(); a.remove();
+            URL.revokeObjectURL(url);
+            mostrarToast('Conversación exportada ⬇️', 'success');
+        }
+
+        function fechaISO() { return new Date().toISOString().slice(0, 10); }
+
+        // MEJORA 39: importar chat
+        function importarChat() {
+            const input = document.createElement('input');
+            input.type = 'file'; input.accept = '.json';
+            input.onchange = () => {
+                const file = input.files[0]; if (!file) return;
+                const reader = new FileReader();
+                reader.onload = e => {
+                    try {
+                        const data = JSON.parse(e.target.result);
+                        const h = Array.isArray(data) ? data : data.historial;
+                        if (!Array.isArray(h)) throw new Error('formato');
+                        historial = h;
+                        guardarHistorial();
+                        document.getElementById('chatContainer').innerHTML = '';
+                        ultimaFechaSeparador = '';
+                        ultimoRemitente = null;
+                        historial.forEach(m => {
+                            const fechaObj = new Date(m.fecha);
+                            insertarSeparadorFechaSiCorresponde(isNaN(fechaObj) ? new Date() : fechaObj);
+                            const wrapper = crearWrapperMensaje(m.contenido, m.tipo, m.hora, m.avatar, m.id);
+                            document.getElementById('chatContainer').appendChild(wrapper);
+                        });
+                        irAlFinal();
+                        mostrarToast('Conversación importada ✅', 'success');
+                    } catch (err) {
+                        mostrarToast('Archivo inválido', 'error');
+                    }
+                };
+                reader.readAsText(file);
+            };
+            input.click();
+        }
+
+        // MEJORA 40: compartir, imprimir, copiar todo
+        function compartirChat() {
+            if (historial.length === 0) return mostrarToast('No hay conversación', 'warning');
+            const texto = historial.map(m => `${m.tipo === 'user' ? 'Tú' : 'EZPack AI'}: ${m.contenido.replace(/<[^>]*>?/gm, '')}`).join('\n\n');
+            if (navigator.share) {
+                navigator.share({ title: 'EZPack AI - Conversación', text: texto }).catch(() => {});
+            } else if (navigator.clipboard) {
+                navigator.clipboard.writeText(texto).then(() => mostrarToast('Chat copiado ✅', 'success'));
+            } else {
+                mostrarToast('Compartir no está disponible', 'warning');
+            }
+        }
+
+        function imprimirChat() {
+            if (historial.length === 0) return mostrarToast('No hay conversación', 'warning');
+            const w = window.open('', '_blank');
+            const filas = historial.map(m => {
+                const quien = m.tipo === 'user' ? 'Tú' : 'EZPack AI';
+                return `<div style="margin:8px 0"><b>${quien}:</b><div>${m.contenido}</div></div>`;
+            }).join('');
+            w.document.write(`<!DOCTYPE html><html><head><title>EZPack AI Chat</title><style>body{font-family:system-ui,sans-serif;padding:20px;max-width:800px;margin:auto}pre{background:#eee;padding:8px}</style></head><body><h1>📦 EZPack AI</h1>${filas}</body></html>`);
+            w.document.close();
+            setTimeout(() => w.print(), 300);
         }
 
         /* =========================================================
-           EVALUADOR MATEMÁTICO PROPIO (sin eval ni Function)
-           Soporta + - * / % ^ paréntesis y sqrt()
+           MEJORA 41: Fijar / Eliminar mensajes
         ========================================================= */
+        function togglePin(btn) {
+            const wrapper = btn.closest('.message-wrapper');
+            const msgId = wrapper.dataset.msgId;
+            const msgDiv = wrapper.querySelector('.message');
+            if (!msgId) return;
+            const idx = pinnedMsgs.findIndex(p => p.id === msgId);
+            if (idx === -1) {
+                pinnedMsgs.push({ id: msgId, contenido: msgDiv.innerText.slice(0, 160) });
+                btn.classList.add('pinned');
+                btn.innerHTML = '📌 Fijado';
+                mostrarToast('Mensaje fijado 📌', 'success');
+            } else {
+                pinnedMsgs.splice(idx, 1);
+                btn.classList.remove('pinned');
+                btn.innerHTML = '📌 Fijar';
+                mostrarToast('Mensaje desafijado');
+            }
+            guardarPins();
+            renderizarPins();
+        }
+
+        function guardarPins() {
+            localStorage.setItem(LS.pinneados, JSON.stringify(pinnedMsgs));
+        }
+
+        function renderizarPins() {
+            const cont = document.getElementById('pinnedMessages');
+            if (pinnedMsgs.length === 0) {
+                cont.classList.remove('show');
+                cont.innerHTML = '';
+                return;
+            }
+            cont.classList.add('show');
+            cont.innerHTML = pinnedMsgs.map((p, i) => `<div class="pinned-item" onclick="irAMensaje('${p.id}')" title="${escaparHTML(p.contenido)}">📌 ${escaparHTML(p.contenido)}</div>`).join('');
+        }
+
+        function irAMensaje(id) {
+            const el = document.querySelector(`.message-wrapper[data-msg-id="${id}"]`);
+            if (el) {
+                el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                el.style.transition = 'background 0.4s';
+                const msg = el.querySelector('.message');
+                msg.style.boxShadow = '0 0 0 3px #fbbf24';
+                setTimeout(() => msg.style.boxShadow = '', 1200);
+            }
+        }
+
+        function eliminarMensaje(btn) {
+            const wrapper = btn.closest('.message-wrapper');
+            const id = wrapper.dataset.msgId;
+            wrapper.style.opacity = '0.4';
+            wrapper.style.transition = 'opacity 0.3s';
+            setTimeout(() => {
+                wrapper.remove();
+                historial = historial.filter(m => m.id !== id);
+                guardarHistorial();
+                pinnedMsgs = pinnedMsgs.filter(p => p.id !== id);
+                guardarPins();
+                renderizarPins();
+                mostrarToast('Mensaje eliminado', 'success');
+            }, 200);
+        }
+
+        /* =========================================================
+           MEJORA 42: Búsqueda en el chat
+        ========================================================= */
+        function alternarBusqueda() {
+            const bar = document.getElementById('searchBar');
+            bar.classList.toggle('open');
+            if (bar.classList.contains('open')) {
+                document.getElementById('searchInput').focus();
+            } else {
+                cerrarBusqueda();
+            }
+        }
+
+        function cerrarBusqueda() {
+            document.getElementById('searchBar').classList.remove('open');
+            document.getElementById('searchInput').value = '';
+            limpiarResaltados();
+            ultimaBusqueda = { termino: '', coincidencias: [], indice: 0 };
+            document.getElementById('searchInfo').textContent = '0 resultados';
+        }
+
+        function limpiarResaltados() {
+            document.querySelectorAll('mark.busqueda').forEach(m => {
+                const parent = m.parentNode;
+                parent.replaceChild(document.createTextNode(m.textContent), m);
+                parent.normalize();
+            });
+        }
+
+        function buscarEnChat() {
+            const termino = document.getElementById('searchInput').value.trim().toLowerCase();
+            limpiarResaltados();
+            ultimaBusqueda.coincidencias = [];
+            ultimaBusqueda.indice = 0;
+            if (!termino) {
+                document.getElementById('searchInfo').textContent = '0 resultados';
+                return;
+            }
+            const mensajes = document.querySelectorAll('.message');
+            mensajes.forEach(msg => {
+                const walker = document.createTreeWalker(msg, NodeFilter.SHOW_TEXT);
+                const nodos = [];
+                let n;
+                while (n = walker.nextNode()) nodos.push(n);
+                nodos.forEach(nodo => {
+                    const texto = nodo.nodeValue;
+                    const lower = texto.toLowerCase();
+                    if (lower.includes(termino)) {
+                        const frag = document.createDocumentFragment();
+                        let pos = 0;
+                        let idx;
+                        while ((idx = lower.indexOf(termino, pos)) !== -1) {
+                            if (idx > pos) frag.appendChild(document.createTextNode(texto.slice(pos, idx)));
+                            const mark = document.createElement('mark');
+                            mark.className = 'busqueda';
+                            mark.textContent = texto.slice(idx, idx + termino.length);
+                            frag.appendChild(mark);
+                            ultimaBusqueda.coincidencias.push(mark);
+                            pos = idx + termino.length;
+                        }
+                        if (pos < texto.length) frag.appendChild(document.createTextNode(texto.slice(pos)));
+                        nodo.parentNode.replaceChild(frag, nodo);
+                    }
+                });
+            });
+            const total = ultimaBusqueda.coincidencias.length;
+            document.getElementById('searchInfo').textContent = `${total} resultado${total === 1 ? '' : 's'}`;
+            if (total > 0) {
+                ultimaBusqueda.coincidencias[0].classList.add('activo');
+                ultimaBusqueda.coincidencias[0].scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
+        }
+
+        function navegarBusqueda(dir) {
+            const c = ultimaBusqueda.coincidencias;
+            if (c.length === 0) return;
+            c[ultimaBusqueda.indice].classList.remove('activo');
+            ultimaBusqueda.indice = (ultimaBusqueda.indice + dir + c.length) % c.length;
+            c[ultimaBusqueda.indice].classList.add('activo');
+            c[ultimaBusqueda.indice].scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+
+        /* =========================================================
+           MEJORA 43: Emoji picker
+        ========================================================= */
+        function inicializarEmojiPicker() {
+            const picker = document.getElementById('emojiPicker');
+            picker.innerHTML = EMOJIS.map(e => `<button onclick="insertarEmoji('${e}')">${e}</button>`).join('');
+        }
+
+        function toggleEmojiPicker() {
+            document.getElementById('emojiPicker').classList.toggle('open');
+        }
+
+        function insertarEmoji(e) {
+            const input = document.getElementById('userInput');
+            const pos = input.selectionStart;
+            input.value = input.value.slice(0, pos) + e + input.value.slice(input.selectionEnd);
+            input.focus();
+            input.setSelectionRange(pos + e.length, pos + e.length);
+            actualizarContador();
+        }
+
+        document.addEventListener('click', (e) => {
+            if (!e.target.closest('.emoji-picker') && !e.target.closest('.emoji-btn')) {
+                document.getElementById('emojiPicker').classList.remove('open');
+            }
+        });
+
+        /* =========================================================
+           MEJORA 44: Modales (atajos y bienvenida)
+        ========================================================= */
+        function abrirAtajos() { document.getElementById('shortcutsModal').classList.add('open'); }
+        function cerrarAtajos() { document.getElementById('shortcutsModal').classList.remove('open'); }
+        function cerrarBienvenida() {
+            document.getElementById('welcomeModal').classList.remove('open');
+            localStorage.setItem(LS.welcomeSeen, 'true');
+        }
+
+        function mostrarBienvenidaSiNecesario() {
+            if (localStorage.getItem(LS.welcomeSeen) !== 'true') {
+                document.getElementById('welcomeModal').classList.add('open');
+            }
+        }
+
+        /* =========================================================
+           MEJORA 45: temporizador de sesión visible
+        ========================================================= */
+        function actualizarTimerSesion() {
+            const ms = Date.now() - sessionStart;
+            const s = Math.floor(ms / 1000);
+            const m = Math.floor(s / 60);
+            const seg = s % 60;
+            const h = Math.floor(m / 60);
+            const mm = m % 60;
+            document.getElementById('sessionTimer').textContent = h > 0
+                ? `· ${h}:${String(mm).padStart(2,'0')}:${String(seg).padStart(2,'0')}`
+                : `· ${String(m).padStart(2,'0')}:${String(seg).padStart(2,'0')}`;
+        }
+
+        /* =========================================================
+           MEJORA 46: MATEMÁTICAS AMPLIADAS
+           Soporta + - * / % ^ paréntesis y funciones:
+           sqrt, sin, cos, tan, asin, acos, atan, log, ln, log10, abs, round, floor, ceil, exp
+           Constantes: pi, e
+        ========================================================= */
+        const FUNCIONES_MATH = ['sqrt','sin','cos','tan','asin','acos','atan','log','ln','log10','abs','round','floor','ceil','exp'];
+        const CONSTANTES_MATH = ['pi', 'e'];
+
         function tokenizarExpresion(str) {
-            const s = str.replace(/,/g, '.').toLowerCase().replace(/×/g, '*').replace(/÷/g, '/');
+            const s = str.replace(/,/g, '.')
+                .toLowerCase()
+                .replace(/×/g, '*')
+                .replace(/÷/g, '/')
+                .replace(/π/g, 'pi');
             const tokens = [];
             let i = 0;
             while (i < s.length) {
@@ -782,10 +1650,45 @@
                     continue;
                 }
                 if ('+-*/%^()'.includes(c)) { tokens.push({ tipo: c }); i++; continue; }
-                if (s.substr(i, 4) === 'sqrt') { tokens.push({ tipo: 'sqrt' }); i += 4; continue; }
+                let matched = false;
+                for (const f of FUNCIONES_MATH) {
+                    if (s.substr(i, f.length) === f && !/[a-z]/.test(s[i + f.length] || '')) {
+                        tokens.push({ tipo: 'func', val: f });
+                        i += f.length; matched = true; break;
+                    }
+                }
+                if (matched) continue;
+                for (const k of CONSTANTES_MATH) {
+                    const prevChar = s[i - 1] || '';
+                    if (s.substr(i, k.length) === k && !/[a-z]/.test(s[i + k.length] || '') && !/[a-z]/.test(prevChar)) {
+                        tokens.push({ tipo: 'const', val: k === 'pi' ? Math.PI : Math.E });
+                        i += k.length; matched = true; break;
+                    }
+                }
+                if (matched) continue;
                 throw new Error('carácter no permitido: ' + c);
             }
             return tokens;
+        }
+
+        function aplicarFuncionMath(fn, v) {
+            switch (fn) {
+                case 'sqrt': if (v < 0) throw new Error('raíz de número negativo'); return Math.sqrt(v);
+                case 'sin': return Math.sin(v);
+                case 'cos': return Math.cos(v);
+                case 'tan': return Math.tan(v);
+                case 'asin': return Math.asin(v);
+                case 'acos': return Math.acos(v);
+                case 'atan': return Math.atan(v);
+                case 'log': case 'ln': return Math.log(v);
+                case 'log10': return Math.log10(v);
+                case 'abs': return Math.abs(v);
+                case 'round': return Math.round(v);
+                case 'floor': return Math.floor(v);
+                case 'ceil': return Math.ceil(v);
+                case 'exp': return Math.exp(v);
+                default: throw new Error('función desconocida');
+            }
         }
 
         function calcularSeguro(expresion) {
@@ -840,16 +1743,16 @@
                     next();
                     return v;
                 }
-                if (t.tipo === 'sqrt') {
-                    next();
-                    if (!peek() || peek().tipo !== '(') throw new Error('se esperaba ( después de sqrt');
+                if (t.tipo === 'func') {
+                    const fn = next().val;
+                    if (!peek() || peek().tipo !== '(') throw new Error('se esperaba ( después de ' + fn);
                     next();
                     const v = parseExpr();
-                    if (!peek() || peek().tipo !== ')') throw new Error('falta paréntesis en sqrt');
+                    if (!peek() || peek().tipo !== ')') throw new Error('falta paréntesis en ' + fn);
                     next();
-                    if (v < 0) throw new Error('raíz de número negativo');
-                    return Math.sqrt(v);
+                    return aplicarFuncionMath(fn, v);
                 }
+                if (t.tipo === 'const') { next(); return t.val; }
                 if (t.tipo === 'num') { next(); return t.val; }
                 throw new Error('token inesperado');
             }
@@ -861,56 +1764,149 @@
         }
 
         /* =========================================================
-           CONVERSOR DE UNIDADES
+           MEJORA 47: CONVERSOR DE UNIDADES AMPLIADO
         ========================================================= */
+        const CONVERSIONES = {
+            // Temperatura
+            'celsius->fahrenheit': v => v * 9/5 + 32,
+            'fahrenheit->celsius': v => (v - 32) * 5/9,
+            'celsius->kelvin': v => v + 273.15,
+            'kelvin->celsius': v => v - 273.15,
+            // Longitud
+            'km->millas': v => v * 0.621371,
+            'millas->km': v => v / 0.621371,
+            'm->pies': v => v * 3.28084,
+            'pies->m': v => v / 3.28084,
+            'cm->pulgadas': v => v / 2.54,
+            'pulgadas->cm': v => v * 2.54,
+            'km->m': v => v * 1000,
+            'm->km': v => v / 1000,
+            'm->cm': v => v * 100,
+            'cm->m': v => v / 100,
+            'milla->yardas': v => v * 1760,
+            // Masa
+            'kg->lb': v => v * 2.20462,
+            'lb->kg': v => v / 2.20462,
+            'kg->g': v => v * 1000,
+            'g->kg': v => v / 1000,
+            'oz->g': v => v * 28.3495,
+            'g->oz': v => v / 28.3495,
+            // Volumen
+            'l->ml': v => v * 1000,
+            'ml->l': v => v / 1000,
+            'gal->l': v => v * 3.78541,
+            'l->gal': v => v / 3.78541
+        };
+
+        // Normaliza nombres en español
+        const ALIAS_UNIDADES = {
+            'celsius': 'celsius', 'centigrados': 'celsius',
+            'fahrenheit': 'fahrenheit',
+            'kelvin': 'kelvin',
+            'km': 'km', 'kilometros': 'km',
+            'millas': 'millas', 'milla': 'millas',
+            'm': 'm', 'metros': 'm', 'metro': 'm',
+            'cm': 'cm', 'centimetros': 'cm',
+            'pies': 'pies', 'pie': 'pies', 'ft': 'pies',
+            'pulgadas': 'pulgadas', 'pulgada': 'pulgadas', 'in': 'pulgadas',
+            'kg': 'kg', 'kilos': 'kg', 'kilogramos': 'kg',
+            'lb': 'lb', 'libras': 'lb', 'libra': 'lb',
+            'g': 'g', 'gramos': 'g',
+            'oz': 'oz', 'onzas': 'oz',
+            'l': 'l', 'litros': 'l', 'litro': 'l',
+            'ml': 'ml', 'mililitros': 'ml',
+            'gal': 'gal', 'galones': 'gal', 'galon': 'gal'
+        };
+
         function convertirUnidad(valor, de, a) {
-            const tabla = {
-                'celsius->fahrenheit': v => v * 9 / 5 + 32,
-                'fahrenheit->celsius': v => (v - 32) * 5 / 9,
-                'km->millas': v => v * 0.621371,
-                'millas->km': v => v / 0.621371,
-                'kg->lb': v => v * 2.20462,
-                'lb->kg': v => v / 2.20462
-            };
-            const fn = tabla[`${de}->${a}`];
-            return fn ? Math.round(fn(valor) * 100) / 100 : null;
+            const deN = ALIAS_UNIDADES[de] || de;
+            const aN = ALIAS_UNIDADES[a] || a;
+            const fn = CONVERSIONES[`${deN}->${aN}`];
+            return fn ? Math.round(fn(valor) * 10000) / 10000 : null;
         }
 
         /* =========================================================
-           NOTAS RÁPIDAS
+           MEJORA 48: NOTAS Y RECORDATORIOS PERSISTENTES
         ========================================================= */
         function cargarNotas() {
             try { notas = JSON.parse(localStorage.getItem(LS.notas)) || []; } catch (e) { notas = []; }
         }
-        function guardarNotas() {
-            localStorage.setItem(LS.notas, JSON.stringify(notas));
+        function guardarNotas() { localStorage.setItem(LS.notas, JSON.stringify(notas)); }
+
+        function cargarRecordatorios() {
+            try { recordatorios = JSON.parse(localStorage.getItem(LS.recordatorios)) || []; } catch (e) { recordatorios = []; }
+            const ahora = Date.now();
+            const atrasados = recordatorios.filter(r => r.ts <= ahora);
+            recordatorios = recordatorios.filter(r => r.ts > ahora);
+            guardarRecordatorios();
+            atrasados.forEach((r, i) => {
+                setTimeout(() => {
+                    agregarMensaje(`⏰ Recordatorio (atrasado): <b>${escaparHTML(r.texto)}</b>`, 'ai', true);
+                    reproducirBeep();
+                    notificar('Recordatorio EZPack', r.texto);
+                }, 700 + i * 400);
+            });
+            programarRecordatorios();
+        }
+
+        function guardarRecordatorios() {
+            localStorage.setItem(LS.recordatorios, JSON.stringify(recordatorios));
+        }
+
+        function programarRecordatorios() {
+            recordatorios.forEach(r => {
+                const delay = r.ts - Date.now();
+                if (delay > 0 && delay < 2147483647) {
+                    setTimeout(() => dispararRecordatorio(r.id), delay);
+                }
+            });
+        }
+
+        function dispararRecordatorio(id) {
+            const r = recordatorios.find(x => x.id === id);
+            if (!r) return;
+            agregarMensaje(`⏰ ¡Recordatorio! <b>${escaparHTML(r.texto)}</b>`, 'ai', true);
+            reproducirBeep();
+            notificar('Recordatorio EZPack', r.texto);
+            recordatorios = recordatorios.filter(x => x.id !== id);
+            guardarRecordatorios();
         }
 
         /* =========================================================
            REGISTRO MODULAR DE COMANDOS
-           Cada entrada intenta responder; si no aplica, retorna null.
-           ctx = { texto (original), t (minúsculas), tN (sin acentos/minúsculas) }
         ========================================================= */
         const AYUDA_ITEMS = [
             { ej: 'hora / fecha', desc: 'la hora o fecha actual' },
-            { ej: 'hora en tokio | londres | madrid | nueva york | los ángeles | cdmx | buenos aires | parís', desc: 'la hora en otras ciudades' },
+            { ej: 'hora en <ciudad>', desc: 'la hora en otras ciudades' },
             { ej: 'abrir youtube / spotify / gd', desc: 'abre esa web en una pestaña nueva' },
-            { ej: 'mate: 45*12+8', desc: 'resuelve operaciones (+ − × ÷ % ^ y sqrt)' },
-            { ej: 'convierte 100 celsius a fahrenheit', desc: 'convierte temperatura, km↔millas o kg↔lb' },
-            { ej: 'dado / moneda / número aleatorio entre 1 y 100', desc: 'tira un dado, lanza una moneda o da un número al azar' },
-            { ej: 'contraseña', desc: 'genera una contraseña segura' },
-            { ej: 'mayúsculas: texto / minúsculas: texto', desc: 'cambia el formato del texto' },
+            { ej: 'mate: 45*12+8', desc: 'operaciones (+ − × ÷ % ^) y funciones (sqrt, sin, cos, log, abs...)' },
+            { ej: 'convierte 100 celsius a fahrenheit', desc: 'conversiones de temperatura, longitud, masa y volumen' },
+            { ej: 'dado [caras] / moneda [n] / número aleatorio entre 1 y 100', desc: 'aleatoriedad' },
+            { ej: 'elige pizza, sushi, tacos', desc: 'elige una opción al azar de una lista' },
+            { ej: 'contraseña [largo]', desc: 'genera una contraseña segura (por defecto 14)' },
+            { ej: 'uuid', desc: 'genera un UUID v4' },
+            { ej: 'base64 codifica/decodifica texto', desc: 'codificación base64' },
+            { ej: 'url codifica/decodifica texto', desc: 'codificación URL' },
+            { ej: 'invertir texto: hola', desc: 'invierte el texto' },
+            { ej: 'título: hola mundo', desc: 'convierte a Formato Título' },
+            { ej: 'slug: ¡Hola Mundo!', desc: 'convierte a slug-url' },
+            { ej: 'mayúsculas: / minúsculas:', desc: 'cambia el formato del texto' },
             { ej: 'contar palabras: texto', desc: 'cuenta palabras y caracteres' },
-            { ej: 'nota: texto / ver notas / borrar notas', desc: 'guarda notas rápidas en este navegador' },
-            { ej: 'temporizador 5 minutos', desc: 'te avisa aquí cuando el tiempo termine' },
-            { ej: 'buscar en internet algo', desc: 'abre una búsqueda en Google' },
-            { ej: 'buscar en wikipedia algo', desc: 'abre el artículo en Wikipedia' },
-            { ej: 'estadísticas', desc: 'muestra datos de esta conversación' },
+            { ej: 'porcentaje 15 de 200', desc: 'calcula porcentajes' },
+            { ej: 'días entre 2024-01-01 y 2024-12-31', desc: 'calcula días entre fechas' },
+            { ej: 'nota: / ver notas / borrar nota N / borrar notas', desc: 'notas rápidas' },
+            { ej: 'recordar en 10 minutos: llamar a mamá', desc: 'crea un recordatorio' },
+            { ej: 'ver recordatorios / borrar recordatorios', desc: 'gestiona recordatorios' },
+            { ej: 'temporizador 5 minutos', desc: 'avisa cuando termine' },
+            { ej: 'pomodoro 25', desc: 'inicia un pomodoro de N minutos' },
+            { ej: 'cronometro', desc: 'inicia un cronómetro (y "parar cronometro")' },
+            { ej: 'buscar en internet / wikipedia algo', desc: 'búsqueda web' },
+            { ej: 'estadísticas', desc: 'datos de esta conversación' },
             { ej: 'chiste', desc: 'te cuenta un chiste' }
         ];
 
         function construirAyuda() {
-            const lista = AYUDA_ITEMS.map(i => `• <b>${i.ej}</b>: ${i.desc}`).join('<br>');
+            const lista = AYUDA_ITEMS.map(i => `• <b>${escaparHTML(i.ej)}</b>: ${i.desc}`).join('<br>');
             return `Esto es lo que sé hacer:<br>${lista}<br><br>También puedo platicar contigo en distintos modos (Amigable, Mate, Experta, Omni, Meme) desde los botones de arriba. ¡Pruébame! 😊`;
         }
 
@@ -918,63 +1914,105 @@
             // ayuda
             ctx => (ctx.tN.includes('ayuda') || ctx.t === '?') ? { texto: construirAyuda(), esHTML: true } : null,
 
-            // hora en <ciudad>
+            // hora en <ciudad> (y soporta dos ciudades)
             ctx => {
                 if (!ctx.tN.includes('hora en ')) return null;
                 const consulta = ctx.tN.split('hora en ')[1].trim();
-                const encontrada = Object.keys(CIUDADES_TZ).find(k => consulta.includes(normalizar(k)));
-                if (!encontrada) return { texto: 'No tengo esa ciudad en mi lista. Prueba con Tokio, Londres, Madrid, Nueva York, Los Ángeles, CDMX, Buenos Aires o París.', esHTML: false };
-                const horaCiudad = new Date().toLocaleTimeString('es-ES', { timeZone: CIUDADES_TZ[encontrada], hour: '2-digit', minute: '2-digit' });
-                return { texto: `En ${encontrada} son las ${horaCiudad}.`, esHTML: false };
+                const encontradas = Object.keys(CIUDADES_TZ).filter(k => consulta.includes(normalizar(k)));
+                if (encontradas.length === 0) return { texto: 'No tengo esa ciudad en mi lista. Prueba con Tokio, Londres, Madrid, Nueva York, Los Ángeles, CDMX, Buenos Aires, París, Berlín, Dubái, Sídney...', esHTML: false };
+                if (encontradas.length === 1) {
+                    const hora = new Date().toLocaleTimeString('es-ES', { timeZone: CIUDADES_TZ[encontradas[0]], hour: '2-digit', minute: '2-digit' });
+                    return { texto: `En ${encontradas[0]} son las ${hora}.`, esHTML: false };
+                }
+                const lista = encontradas.map(k => `${k}: ${new Date().toLocaleTimeString('es-ES', { timeZone: CIUDADES_TZ[k], hour: '2-digit', minute: '2-digit' })}`).join('<br>');
+                return { texto: `🕐 Horas actuales:<br>${lista}`, esHTML: true };
             },
 
-            // hora (genérico)
+            // hora
             ctx => ctx.tN.includes('hora') ? { texto: `¡Claro! En este momento son las ${horaCorta(new Date())}.`, esHTML: false } : null,
 
             // fecha
             ctx => (ctx.tN.includes('fecha') || ctx.tN.includes('que dia es')) ? { texto: `Hoy es ${fechaCorta(new Date())}.`, esHTML: false } : null,
 
             // abrir youtube / spotify / gd
-            ctx => ctx.tN.includes('abrir youtube') ? (window.open('https://youtube.com', '_blank'), { texto: '¡Perfecto! Te abro YouTube en un instante para que disfrutes de tus videos. 📺', esHTML: false }) : null,
-            ctx => ctx.tN.includes('abrir spotify') ? (window.open('https://open.spotify.com', '_blank'), { texto: '¡Entendido! Abriendo Spotify para que le des play a tu música. 🎧', esHTML: false }) : null,
-            ctx => (ctx.tN.includes('abrir geometria dash') || ctx.tN.includes('abrir gd')) ? (window.open('https://poki.com/es/g/geometry-dash', '_blank'), { texto: '¡Excelente elección! Abriendo los juegos web para pasar un buen rato. 🎮', esHTML: false }) : null,
+            ctx => ctx.tN.includes('abrir youtube') ? (window.open('https://youtube.com', '_blank'), { texto: '¡Perfecto! Te abro YouTube. 📺', esHTML: false }) : null,
+            ctx => ctx.tN.includes('abrir spotify') ? (window.open('https://open.spotify.com', '_blank'), { texto: '¡Entendido! Abriendo Spotify. 🎧', esHTML: false }) : null,
+            ctx => (ctx.tN.includes('abrir geometria dash') || ctx.tN.includes('abrir gd')) ? (window.open('https://poki.com/es/g/geometry-dash', '_blank'), { texto: '¡Excelente elección! Abriendo Geometry Dash. 🎮', esHTML: false }) : null,
 
             // mate:
             ctx => {
                 if (!(ctx.tN.startsWith('mate:') || ctx.tN.startsWith('mate ') || ctx.tN === 'mate')) return null;
                 const operacion = ctx.tN.replace('mate:', '').replace('mate', '').trim();
-                if (!operacion) return { texto: '¡Modo Mate! Dime una operación así: <b>mate: 45*12+8</b> y la resolvemos. 🧮', esHTML: true };
+                if (!operacion) return { texto: '¡Modo Mate! Dime una operación así: <b>mate: 45*12+8</b> o usa funciones como <b>sqrt(16)</b>, <b>sin(pi/2)</b>. 🧮', esHTML: true };
                 try {
                     const resultado = calcularSeguro(operacion);
-                    return { texto: `¡Listo! El resultado de resolver <b>${escaparHTML(operacion)}</b> es <b>${resultado}</b>. 🧮✨`, esHTML: true };
+                    return { texto: `¡Listo! El resultado de <b>${escaparHTML(operacion)}</b> es <b>${resultado}</b>. 🧮✨`, esHTML: true };
                 } catch (err) {
-                    return { texto: 'Ay, tuve un pequeño desliz calculando eso. Solo puedo usar números, + − × ÷ % ^ paréntesis y sqrt(). ¿Revisamos la operación?', esHTML: false };
+                    return { texto: 'Ay, tuve un desliz calculando. Solo uso números, + − × ÷ % ^ paréntesis y funciones (sqrt, sin, cos, log, abs, round...). ¿Revisamos?', esHTML: false };
                 }
             },
 
             // mem reduct
-            ctx => ctx.tN.includes('mem reduct') ? { texto: '<b>Mem Reduct</b> es una herramienta súper útil y ligera para Windows que te ayuda a liberar memoria RAM y mantener tu compu al máximo rendimiento. ¡Te la recomiendo mucho!', esHTML: true } : null,
+            ctx => ctx.tN.includes('mem reduct') ? { texto: '<b>Mem Reduct</b> es una herramienta ligera para Windows que libera RAM y mantiene tu compu al máximo. ¡Muy recomendada!', esHTML: true } : null,
+
+            // porcentaje X de Y
+            ctx => {
+                const m = ctx.tN.match(/porcentaje\s+([\d.,]+)\s*(?:%|por ciento)?\s*de\s+([\d.,]+)/);
+                if (!m) return null;
+                const p = parseFloat(m[1].replace(',', '.'));
+                const total = parseFloat(m[2].replace(',', '.'));
+                const res = (p * total) / 100;
+                return { texto: `📊 El <b>${p}%</b> de <b>${total}</b> es <b>${Math.round(res * 10000) / 10000}</b>.`, esHTML: true };
+            },
+
+            // días entre fechas
+            ctx => {
+                const m = ctx.tN.match(/dias?\s+entre\s+(\d{4}-\d{1,2}-\d{1,2})\s+y\s+(\d{4}-\d{1,2}-\d{1,2})/);
+                if (!m) return null;
+                const d1 = new Date(m[1]);
+                const d2 = new Date(m[2]);
+                if (isNaN(d1) || isNaN(d2)) return { texto: 'Usa el formato AAAA-MM-DD. Ej: días entre 2024-01-01 y 2024-12-31', esHTML: false };
+                const dias = Math.round(Math.abs(d2 - d1) / 86400000);
+                return { texto: `📅 Entre ${m[1]} y ${m[2]} hay <b>${dias}</b> días.`, esHTML: true };
+            },
 
             // convierte X unidad a unidad
             ctx => {
-                const m = ctx.tN.match(/convierte\s+([\d.,]+)\s*(celsius|fahrenheit|km|millas|kg|lb)\s+a\s+(celsius|fahrenheit|km|millas|kg|lb)/);
+                const m = ctx.tN.match(/convierte\s+([\d.,]+)\s*([a-zñ]+)\s+a\s+([a-zñ]+)/);
                 if (!m) return null;
                 const valor = parseFloat(m[1].replace(',', '.'));
-                const resultado = convertirUnidad(valor, m[2], m[3]);
-                if (resultado === null) return { texto: 'Esa conversión no la tengo disponible todavía. Puedo hacer celsius↔fahrenheit, km↔millas y kg↔lb.', esHTML: false };
-                return { texto: `${valor} ${m[2]} equivale a <b>${resultado} ${m[3]}</b>.`, esHTML: true };
+                const de = m[2], a = m[3];
+                const resultado = convertirUnidad(valor, de, a);
+                if (resultado === null) return { texto: `No tengo esa conversión. Puedo hacer temperaturas (celsius/fahrenheit/kelvin), longitud (km/m/cm/millas/pies/pulgadas), masa (kg/g/lb/oz) y volumen (l/ml/gal).`, esHTML: false };
+                return { texto: `${valor} ${de} = <b>${resultado} ${a}</b>.`, esHTML: true };
             },
 
-            // dado
-            ctx => ctx.tN.includes('dado') ? { texto: `🎲 Salió un ${Math.ceil(Math.random() * 6)}.`, esHTML: false } : null,
+            // dado [caras]
+            ctx => {
+                if (!/\bdado\b/.test(ctx.tN)) return null;
+                const m = ctx.tN.match(/dado\s+(\d+)/);
+                const caras = m ? Math.max(2, Math.min(1000, parseInt(m[1], 10))) : 6;
+                const n = Math.floor(Math.random() * caras) + 1;
+                return { texto: `🎲 Salió un <b>${n}</b> (dado de ${caras} caras).`, esHTML: true };
+            },
 
-            // moneda
-            ctx => ctx.tN.includes('moneda') ? { texto: `🪙 Salió ${Math.random() < 0.5 ? 'cara' : 'cruz'}.`, esHTML: false } : null,
+            // moneda [veces]
+            ctx => {
+                if (!/\bmoneda\b/.test(ctx.tN)) return null;
+                const m = ctx.tN.match(/moneda\s+(\d+)/);
+                if (m) {
+                    const veces = Math.max(1, Math.min(50, parseInt(m[1], 10)));
+                    let caras = 0, cruces = 0;
+                    for (let i = 0; i < veces; i++) (Math.random() < 0.5 ? caras++ : cruces++);
+                    return { texto: `🪙 ${veces} lanzamientos → <b>Cara: ${caras}</b> · <b>Cruz: ${cruces}</b>`, esHTML: true };
+                }
+                return { texto: `🪙 Salió <b>${Math.random() < 0.5 ? 'cara' : 'cruz'}</b>.`, esHTML: true };
+            },
 
             // número aleatorio
             ctx => {
                 if (!ctx.tN.includes('numero aleatorio')) return null;
-                const m = ctx.tN.match(/(\d+)\s*(?:y|-)\s*(\d+)/);
+                const m = ctx.tN.match(/(\d+)\s*(?:y|-|al?)\s*(\d+)/);
                 const min = m ? parseInt(m[1], 10) : 1;
                 const max = m ? parseInt(m[2], 10) : 100;
                 const lo = Math.min(min, max), hi = Math.max(min, max);
@@ -982,33 +2020,109 @@
                 return { texto: `🔢 Tu número es: <b>${n}</b> (entre ${lo} y ${hi}).`, esHTML: true };
             },
 
-            // contraseña
+            // elegir de lista
             ctx => {
-                if (!ctx.tN.includes('contrasena')) return null;
-                const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789!@#$%&*';
-                const arr = new Uint32Array(14);
-                crypto.getRandomValues(arr);
-                const pass = Array.from(arr, n => chars[n % chars.length]).join('');
-                return { texto: `🔑 Aquí tienes una contraseña segura: <b>${pass}</b><br><small>Guárdala en un lugar seguro, no la volveré a mostrar.</small>`, esHTML: true };
+                const m = ctx.texto.match(/^elige\s+(.+)/i);
+                if (!m) return null;
+                const opciones = m[1].split(',').map(s => s.trim()).filter(Boolean);
+                if (opciones.length < 2) return { texto: 'Dame al menos 2 opciones separadas por comas. Ej: "elige pizza, sushi, tacos"', esHTML: false };
+                const elegido = opciones[Math.floor(Math.random() * opciones.length)];
+                return { texto: `🎯 De ${opciones.length} opciones, elegí: <b>${escaparHTML(elegido)}</b>`, esHTML: true };
             },
 
-            // mayúsculas: / minúsculas:  (se usan sobre el texto original, no normalizado)
+            // contraseña [largo]
+            ctx => {
+                if (!ctx.tN.includes('contrasena')) return null;
+                const m = ctx.tN.match(/contrasena\s+(\d+)/);
+                const largo = m ? Math.max(6, Math.min(64, parseInt(m[1], 10))) : 14;
+                const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789!@#$%&*';
+                const arr = new Uint32Array(largo);
+                crypto.getRandomValues(arr);
+                const pass = Array.from(arr, n => chars[n % chars.length]).join('');
+                return { texto: `🔑 Contraseña (${largo} caracteres): <br><code class="inline-code">${escaparHTML(pass)}</code><br><small>Guárdala en un lugar seguro.</small>`, esHTML: true };
+            },
+
+            // UUID v4
+            ctx => {
+                if (!/\buuid\b/.test(ctx.tN)) return null;
+                const uuid = (crypto.randomUUID ? crypto.randomUUID() :
+                    'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c => {
+                        const r = Math.random() * 16 | 0;
+                        return (c === 'x' ? r : (r & 0x3 | 0x8)).toString(16);
+                    }));
+                return { texto: `🆔 UUID: <br><code class="inline-code">${uuid}</code>`, esHTML: true };
+            },
+
+            // base64
+            ctx => {
+                let m = ctx.texto.match(/^base64\s+codifica\s+(.+)/i);
+                if (m) {
+                    try { return { texto: `📦 Base64: <br><code class="inline-code">${btoa(unescape(encodeURIComponent(m[1])))}</code>`, esHTML: true }; }
+                    catch (e) { return { texto: 'No pude codificar eso.', esHTML: false }; }
+                }
+                m = ctx.texto.match(/^base64\s+decodifica\s+(.+)/i);
+                if (m) {
+                    try { return { texto: `🔓 Texto: <b>${escaparHTML(decodeURIComponent(escape(atob(m[1].trim()))))}</b>`, esHTML: true }; }
+                    catch (e) { return { texto: 'Texto base64 inválido.', esHTML: false }; }
+                }
+                return null;
+            },
+
+            // url encode/decode
+            ctx => {
+                let m = ctx.texto.match(/^url\s+codifica\s+(.+)/i);
+                if (m) return { texto: `🔗 URL codificada: <br><code class="inline-code">${encodeURIComponent(m[1])}</code>`, esHTML: true };
+                m = ctx.texto.match(/^url\s+decodifica\s+(.+)/i);
+                if (m) {
+                    try { return { texto: `🔓 URL decodificada: <b>${escaparHTML(decodeURIComponent(m[1]))}</b>`, esHTML: true }; }
+                    catch (e) { return { texto: 'URL inválida.', esHTML: false }; }
+                }
+                return null;
+            },
+
+            // invertir texto
+            ctx => {
+                const m = ctx.texto.match(/^invertir\s+texto:\s*(.+)/i);
+                return m ? { texto: `🔄 Invertido: <b>${escaparHTML(m[1].split('').reverse().join(''))}</b>`, esHTML: true } : null;
+            },
+
+            // título
+            ctx => {
+                const m = ctx.texto.match(/^t[íi]tulo:\s*(.+)/i);
+                return m ? { texto: `📝 <b>${escaparHTML(m[1].replace(/\w\S*/g, t => t.charAt(0).toUpperCase() + t.substr(1).toLowerCase()))}</b>`, esHTML: true } : null;
+            },
+
+            // slug
+            ctx => {
+                const m = ctx.texto.match(/^slug:\s*(.+)/i);
+                if (!m) return null;
+                const slug = m[1].toLowerCase()
+                    .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+                    .replace(/[^a-z0-9\s-]/g, '')
+                    .trim().replace(/\s+/g, '-');
+                return { texto: `🔗 Slug: <code class="inline-code">${escaparHTML(slug)}</code>`, esHTML: true };
+            },
+
+            // mayúsculas
             ctx => {
                 const m = ctx.texto.match(/^may[uú]sculas:\s*(.+)/i);
                 return m ? { texto: escaparHTML(m[1].toUpperCase()), esHTML: true } : null;
             },
+            // minúsculas
             ctx => {
                 const m = ctx.texto.match(/^min[uú]sculas:\s*(.+)/i);
                 return m ? { texto: escaparHTML(m[1].toLowerCase()), esHTML: true } : null;
             },
 
-            // contar palabras:
+            // contar palabras
             ctx => {
                 const m = ctx.texto.match(/^contar palabras:\s*(.+)/i);
                 if (!m) return null;
                 const contenido = m[1].trim();
                 const palabras = contenido.split(/\s+/).filter(Boolean).length;
-                return { texto: `📝 Ese texto tiene <b>${palabras}</b> palabras y <b>${contenido.length}</b> caracteres.`, esHTML: true };
+                const letras = (contenido.match(/[a-záéíóúñ]/gi) || []).length;
+                const numeros = (contenido.match(/\d/g) || []).length;
+                return { texto: `📝 <b>${palabras}</b> palabras · <b>${contenido.length}</b> caracteres · <b>${letras}</b> letras · <b>${numeros}</b> dígitos.`, esHTML: true };
             },
 
             // nota:
@@ -1017,14 +2131,24 @@
                 if (!m) return null;
                 notas.push(m[1].trim());
                 guardarNotas();
-                return { texto: `🗒️ Nota guardada. Ahora tienes <b>${notas.length}</b> nota(s). Escribe "ver notas" para revisarlas.`, esHTML: true };
+                return { texto: `🗒️ Nota guardada. Ahora tienes <b>${notas.length}</b> nota(s). Escribe "ver notas".`, esHTML: true };
             },
             // ver notas
             ctx => {
                 if (!ctx.tN.includes('ver notas')) return null;
-                if (notas.length === 0) return { texto: 'Todavía no tienes notas guardadas. Escribe "nota: lo que quieras recordar".', esHTML: false };
+                if (notas.length === 0) return { texto: 'No tienes notas todavía. Escribe "nota: lo que quieras".', esHTML: false };
                 const lista = notas.map((n, i) => `${i + 1}. ${escaparHTML(n)}`).join('<br>');
                 return { texto: `🗒️ Tus notas:<br>${lista}`, esHTML: true };
+            },
+            // borrar nota N
+            ctx => {
+                const m = ctx.tN.match(/borrar nota\s+(\d+)/);
+                if (!m) return null;
+                const i = parseInt(m[1], 10) - 1;
+                if (i < 0 || i >= notas.length) return { texto: 'Ese número de nota no existe.', esHTML: false };
+                const eliminada = notas.splice(i, 1)[0];
+                guardarNotas();
+                return { texto: `🗑️ Nota eliminada: "${escaparHTML(eliminada)}". Quedan ${notas.length}.`, esHTML: true };
             },
             // borrar notas
             ctx => {
@@ -1034,19 +2158,101 @@
                 return { texto: 'Listo, borré todas tus notas.', esHTML: false };
             },
 
-            // temporizador
+            // recordar en X minutos: texto
             ctx => {
-                const m = ctx.tN.match(/temporizador\s+(\d+)\s*(minuto|minutos|segundo|segundos)/);
+                const m = ctx.texto.match(/^recordar\s+en\s+(\d+)\s*(minuto|min|minutos|segundo|seg|segundos|hora|horas|h)\s*:\s*(.+)/i);
                 if (!m) return null;
                 const cantidad = parseInt(m[1], 10);
-                const esMinutos = m[2].startsWith('minuto');
-                const ms = cantidad * (esMinutos ? 60000 : 1000);
+                const unidad = m[2].toLowerCase();
+                const textoRec = m[3].trim();
+                let ms;
+                if (unidad.startsWith('seg')) ms = cantidad * 1000;
+                else if (unidad.startsWith('h')) ms = cantidad * 3600000;
+                else ms = cantidad * 60000;
+                const r = { id: 'r' + Date.now(), texto: textoRec, ts: Date.now() + ms };
+                recordatorios.push(r);
+                guardarRecordatorios();
+                setTimeout(() => dispararRecordatorio(r.id), ms);
+                pedirPermisoNotificaciones();
+                return { texto: `⏰ Recordatorio creado para dentro de ${cantidad} ${unidad}: "<b>${escaparHTML(textoRec)}</b>"`, esHTML: true };
+            },
+
+            // ver recordatorios
+            ctx => {
+                if (!ctx.tN.includes('ver recordatorios')) return null;
+                if (recordatorios.length === 0) return { texto: 'No tienes recordatorios activos.', esHTML: false };
+                const lista = recordatorios.map((r, i) => {
+                    const restante = formatearDuracion(r.ts - Date.now());
+                    return `${i + 1}. ${escaparHTML(r.texto)} <i>(en ${restante})</i>`;
+                }).join('<br>');
+                return { texto: `⏰ Recordatorios activos:<br>${lista}`, esHTML: true };
+            },
+
+            // borrar recordatorios
+            ctx => {
+                if (!ctx.tN.includes('borrar recordatorios')) return null;
+                recordatorios = [];
+                guardarRecordatorios();
+                return { texto: '🗑️ Borré todos los recordatorios.', esHTML: false };
+            },
+
+            // pomodoro
+            ctx => {
+                const m = ctx.tN.match(/pomodoro\s+(\d+)/);
+                if (!m && !ctx.tN.includes('pomodoro')) return null;
+                const min = m ? Math.max(1, Math.min(120, parseInt(m[1], 10))) : 25;
+                if (pomodoroInterval) clearInterval(pomodoroInterval);
+                let restante = min * 60;
+                const inicio = Date.now();
+                pomodoroInterval = setInterval(() => {
+                    restante = Math.max(0, Math.round((inicio + min * 60000 - Date.now()) / 1000));
+                    if (restante <= 0) {
+                        clearInterval(pomodoroInterval);
+                        pomodoroInterval = null;
+                        agregarMensaje(`🍅 ¡Pomodoro de ${min} min completado! Tómate un descanso.`, 'ai');
+                        reproducirBeep();
+                        notificar('Pomodoro completado', `${min} minutos terminados`);
+                    }
+                }, 1000);
+                return { texto: `🍅 Pomodoro de <b>${min} minutos</b> iniciado. Te aviso al terminar.`, esHTML: true };
+            },
+
+            // cronómetro
+            ctx => {
+                if (ctx.tN.includes('parar cronometro') || ctx.tN.includes('detener cronometro')) {
+                    if (cronometroInterval) {
+                        clearInterval(cronometroInterval);
+                        cronometroInterval = null;
+                        const total = cronometroAcumulado + (Date.now() - cronometroInicio);
+                        return { texto: `⏱️ Cronómetro detenido. Tiempo total: <b>${formatearDuracion(total)}</b>`, esHTML: true };
+                    }
+                    return { texto: 'No hay cronómetro activo.', esHTML: false };
+                }
+                if (!/\bcronometro\b/.test(ctx.tN)) return null;
+                if (cronometroInterval) return { texto: 'Ya hay un cronómetro activo. Di "parar cronometro".', esHTML: false };
+                cronometroInicio = Date.now();
+                cronometroAcumulado = 0;
+                cronometroInterval = setInterval(() => {}, 1000);
+                return { texto: `⏱️ Cronómetro iniciado. Di "parar cronometro" cuando quieras.`, esHTML: false };
+            },
+
+            // temporizador
+            ctx => {
+                const m = ctx.tN.match(/temporizador\s+(\d+)\s*(minuto|minutos|segundo|segundos|hora|horas)/);
+                if (!m) return null;
+                const cantidad = parseInt(m[1], 10);
+                const u = m[2];
+                let ms, txt;
+                if (u.startsWith('seg')) { ms = cantidad * 1000; txt = `${cantidad} segundo(s)`; }
+                else if (u.startsWith('hora')) { ms = cantidad * 3600000; txt = `${cantidad} hora(s)`; }
+                else { ms = cantidad * 60000; txt = `${cantidad} minuto(s)`; }
                 setTimeout(() => {
-                    agregarMensaje(`⏱️ ¡Se cumplió tu temporizador de ${cantidad} ${esMinutos ? 'minuto(s)' : 'segundo(s)'}!`, 'ai');
+                    agregarMensaje(`⏱️ ¡Se cumplió tu temporizador de ${txt}!`, 'ai');
                     reproducirBeep();
-                    mostrarToast('¡Temporizador terminado! ⏱️');
+                    notificar('Temporizador EZPack', `Terminó: ${txt}`);
                 }, ms);
-                return { texto: `⏱️ Temporizador iniciado por ${cantidad} ${esMinutos ? 'minuto(s)' : 'segundo(s)'}. Te aviso aquí cuando termine.`, esHTML: false };
+                pedirPermisoNotificaciones();
+                return { texto: `⏱️ Temporizador iniciado por <b>${txt}</b>. Te aviso al terminar.`, esHTML: true };
             },
 
             // buscar en internet
@@ -1054,73 +2260,59 @@
                 const m = ctx.texto.match(/buscar en internet\s+(.+)/i);
                 if (!m) return null;
                 window.open('https://www.google.com/search?q=' + encodeURIComponent(m[1].trim()), '_blank');
-                return { texto: `🔎 Abrí una búsqueda sobre "${escaparHTML(m[1].trim())}" en Google.`, esHTML: true };
+                return { texto: `🔎 Buscando "<b>${escaparHTML(m[1].trim())}</b>" en Google.`, esHTML: true };
             },
             // buscar en wikipedia
             ctx => {
                 const m = ctx.texto.match(/buscar en wikipedia\s+(.+)/i);
                 if (!m) return null;
                 window.open('https://es.wikipedia.org/wiki/Special:Search?search=' + encodeURIComponent(m[1].trim()), '_blank');
-                return { texto: `📖 Abrí Wikipedia buscando "${escaparHTML(m[1].trim())}".`, esHTML: true };
+                return { texto: `📖 Buscando "<b>${escaparHTML(m[1].trim())}</b>" en Wikipedia.`, esHTML: true };
             },
 
             // chiste
-            ctx => ctx.tN.includes('chiste') ? { texto: CHISTES[Math.floor(Math.random() * CHISTES.length)], esHTML: false } : null,
+            ctx => /\bchiste\b/.test(ctx.tN) ? { texto: CHISTES[Math.floor(Math.random() * CHISTES.length)], esHTML: false } : null,
 
             // estadísticas
             ctx => {
                 if (!ctx.tN.includes('estadistic')) return null;
-                const mensajesUsuario = historial.filter(m => m.tipo === 'user').length;
-                const mensajesIA = historial.filter(m => m.tipo === 'ai').length;
-                const minutos = Math.max(1, Math.round((Date.now() - sessionStart) / 60000));
-                return { texto: `📊 Llevamos <b>${mensajesUsuario}</b> mensajes tuyos y <b>${mensajesIA}</b> respuestas mías, en <b>${minutos}</b> minuto(s) de esta sesión.`, esHTML: true };
+                const s = calcularEstadisticas();
+                return { texto: `📊 Llevamos <b>${s.mensajesUsuario}</b> mensajes tuyos y <b>${s.mensajesIA}</b> respuestas mías · <b>${s.palabras}</b> palabras · <b>${s.minutos}</b> min de sesión.`, esHTML: true };
             },
 
             // quién eres
-            ctx => (ctx.tN.includes('quien eres')) ? { texto: 'Soy <b>EZPack AI</b>, tu asistente ligero que corre directo en el navegador: sin servidores ni configuraciones complicadas. 📦', esHTML: true } : null,
+            ctx => ctx.tN.includes('quien eres') ? { texto: 'Soy <b>EZPack AI</b>, tu asistente ligero que corre directo en el navegador. 📦', esHTML: true } : null,
 
             // gracias
-            ctx => ctx.tN.includes('gracias') ? { texto: '¡Con mucho gusto! Aquí ando para lo que necesites. 😊', esHTML: false } : null,
+            ctx => /\bgracias\b/.test(ctx.tN) ? { texto: '¡Con mucho gusto! Aquí ando para lo que necesites. 😊', esHTML: false } : null,
 
             // saludo
             ctx => /^(hola|buenas|hey)\b/.test(ctx.tN) ? { texto: '¡Hola! Qué bueno tenerte por aquí. ¿En qué te ayudo hoy?', esHTML: false } : null
         ];
 
         function respuestaPorModo(texto) {
-            // Quita el prefijo de activación por voz "Hey Pack" (si vino) solo para
-            // interpretar/mostrar mejor el texto aquí; el historial guarda el mensaje original.
             const textoLimpio = texto.replace(/^hey\s*pack[\s,:.]*/i, '').trim() || texto;
 
             if (modoActual === 'Mate') {
-                // Modo Mate: ahora cumple su función incluso sin el prefijo "mate:",
-                // intentando resolver directamente cualquier operación que se escriba.
                 try {
                     const resultado = calcularSeguro(textoLimpio);
-                    return { texto: `🧮 En modo Mate interpreté eso como una operación: <b>${escaparHTML(textoLimpio)}</b> = <b>${resultado}</b>. ¿Seguimos con otra?`, esHTML: true };
+                    return { texto: `🧮 En modo Mate: <b>${escaparHTML(textoLimpio)}</b> = <b>${resultado}</b>. ¿Otra?`, esHTML: true };
                 } catch (err) {
-                    return { texto: "¡Modo Mate activado! Escríbeme la operación directamente (ej. 45*12+8) o usando 'mate: [operación]' y con gusto la resolvemos juntos. 🧮", esHTML: false };
+                    return { texto: "¡Modo Mate activado! Escríbeme la operación directamente (ej. 45*12+8) o con 'mate:'. También acepto sqrt(16), sin(pi/2), log(100)... 🧮", esHTML: false };
                 }
             } else if (modoActual === 'Meme') {
-                // Modo Meme: variedad de respuestas relajadas y con jerga en vez de una sola fija.
-                const frasesMeme = [
-                    '¡Claro que sí, crack! Aquí andamos al 100 y listos para lo que se ofrezca Bv 😎📦',
-                    `Ando full con lo que dices de "${escaparHTML(textoLimpio)}", ¡vamos con toda! 😎🔥`,
-                    'Ese comentario está OP nivel máximo, cuéntame más plz 😎🎮'
-                ];
-                return { texto: frasesMeme[Math.floor(Math.random() * frasesMeme.length)], esHTML: true };
+                const r = FRASES_MEME[Math.floor(Math.random() * FRASES_MEME.length)];
+                return { texto: r, esHTML: true };
             } else if (modoActual === 'Experta') {
-                // Modo Experta: respuesta más técnica y directa, con métricas concretas del mensaje.
                 const palabras = textoLimpio.split(/\s+/).filter(Boolean).length;
-                return { texto: `He analizado tu consulta: "${escaparHTML(textoLimpio)}" (${palabras} palabra(s), ${textoLimpio.length} carácter(es)). Con la información disponible localmente no tengo una respuesta específica, pero puedo ayudarte con hora, fecha, cálculos, conversiones, notas o abrir apps.`, esHTML: true };
+                return { texto: `He analizado tu consulta: "${escaparHTML(textoLimpio)}" (${palabras} palabra(s), ${textoLimpio.length} carácter(es)). Con la info local puedo ayudarte con hora, fecha, cálculos, conversiones, notas o abrir apps.`, esHTML: true };
             } else if (modoActual === 'Omni') {
-                // Modo Omni: ahora sí toma en cuenta el contexto real de la charla (historial),
-                // en vez de solo prometerlo en el texto.
                 const mensajesPrevios = historial.filter(m => m.tipo === 'user');
                 const anterior = mensajesPrevios.length > 1 ? mensajesPrevios[mensajesPrevios.length - 2].contenido.replace(/<[^>]*>?/gm, '') : null;
-                const memoria = anterior ? `, recordando que antes mencionaste "${escaparHTML(anterior)}"` : '';
-                return { texto: `Tomando en cuenta todo el contexto de esta charla (llevamos ${mensajesPrevios.length} mensaje(s) tuyos${memoria}): dime si necesitas la hora, un cálculo, una conversión o simplemente platicar sobre "${escaparHTML(textoLimpio)}". Aquí estoy para lo que sea. 🌐`, esHTML: true };
+                const memoria = anterior ? `, recordando que antes mencionaste "${escaparHTML(anterior.slice(0, 60))}"` : '';
+                return { texto: `Tomando en cuenta el contexto (llevamos ${mensajesPrevios.length} mensaje(s) tuyos${memoria}): dime si necesitas la hora, un cálculo, una conversión o platicar sobre "${escaparHTML(textoLimpio.slice(0, 80))}". 🌐`, esHTML: true };
             }
-            return { texto: `¡Qué interesante lo que comentas sobre "${escaparHTML(textoLimpio)}"! Me encanta ayudarte en todo lo que necesites desde casa. ¿Qué más hacemos? 😊`, esHTML: true };
+            return { texto: `¡Qué interesante lo que comentas sobre "${escaparHTML(textoLimpio)}"! ¿Qué más hacemos? 😊`, esHTML: true };
         }
 
         /* =========================================================
@@ -1133,6 +2325,9 @@
             if (!texto) return;
 
             agregarMensaje(texto, 'user');
+            historialComandos.push(texto);
+            if (historialComandos.length > 50) historialComandos.shift();
+            posicionHistorial = -1;
             input.value = '';
             actualizarContador();
             procesando = true;
@@ -1150,8 +2345,10 @@
                 const ctx = { texto, t, tN };
                 let resultado = null;
                 for (const comando of COMANDOS) {
-                    resultado = comando(ctx);
-                    if (resultado) break;
+                    try {
+                        resultado = comando(ctx);
+                        if (resultado) break;
+                    } catch (e) { /* continuar con el siguiente */ }
                 }
                 if (!resultado) resultado = respuestaPorModo(texto);
 
@@ -1167,7 +2364,7 @@
                 procesando = false;
                 document.getElementById('sendBtn').disabled = false;
                 document.getElementById('userInput').focus();
-            }, 450);
+            }, 400);
         }
 
         function mostrarEscribiendo() {
@@ -1176,7 +2373,7 @@
             wrapper.className = 'message-wrapper ai';
             wrapper.id = 'typingIndicator';
             wrapper.setAttribute('aria-hidden', 'true');
-            wrapper.innerHTML = `<div class="message ai"><div class="typing-dots"><span></span><span></span><span></span></div></div>`;
+            wrapper.innerHTML = `<div class="message ai"><div class="typing-dots"><span></span><span></span><span></span><span class="typing-label">EZPack está escribiendo...</span></div></div>`;
             container.appendChild(wrapper);
             container.scrollTop = container.scrollHeight;
         }
@@ -1187,27 +2384,79 @@
         }
 
         /* =========================================================
-           ATAJOS DE TECLADO
+           ATAJOS DE TECLADO GLOBALES
         ========================================================= */
         document.addEventListener('keydown', (e) => {
             const input = document.getElementById('userInput');
             if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') {
                 e.preventDefault();
                 input.focus();
-            } else if (e.key === 'Escape' && document.activeElement === input) {
-                input.value = '';
-                actualizarContador();
+            } else if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'f') {
+                e.preventDefault();
+                alternarBusqueda();
+            } else if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'm') {
+                e.preventDefault();
+                toggleVoz();
+            } else if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'e') {
+                e.preventDefault();
+                toggleEmojiPicker();
+            } else if (e.key === '?' && document.activeElement !== input) {
+                e.preventDefault();
+                abrirAtajos();
+            } else if (e.key === 'Escape') {
+                if (document.getElementById('shortcutsModal').classList.contains('open')) cerrarAtajos();
+                else if (document.getElementById('welcomeModal').classList.contains('open')) cerrarBienvenida();
+                else if (document.getElementById('searchBar').classList.contains('open')) cerrarBusqueda();
+                else if (document.getElementById('emojiPicker').classList.contains('open')) toggleEmojiPicker();
+                else if (document.activeElement === input) {
+                    input.value = '';
+                    actualizarContador();
+                }
             }
         });
 
         /* =========================================================
            INICIALIZACIÓN
         ========================================================= */
-        function iniciar() {
-            aplicarTema(localStorage.getItem(LS.tema) || (window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark'));
-            cargarAjustesVoz();
-            cargarNotas();
+        function mostrarSaludoInicial(guardar) {
+            const hora = new Date().getHours();
+            let saludo = 'Buenas noches';
+            if (hora >= 6 && hora < 12) saludo = 'Buenos días';
+            else if (hora >= 12 && hora < 20) saludo = 'Buenas tardes';
+            agregarMensaje(
+                `¡${saludo}! Qué gusto saludarte. Di o escribe <b>"Hey Pack"</b> para que platiquemos, pregunta la hora o fecha, pide un chiste, resuelve operaciones (modo Mate) o usa <b>ayuda</b> para ver todo lo que sé hacer. Presiona <b>?</b> para atajos. ¡Aquí estoy! 😊`,
+                'ai', true, guardar
+            );
+        }
 
+        function iniciar() {
+            // Tema
+            aplicarTema(localStorage.getItem(LS.tema) || (window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark'));
+            aplicarTemaAutomatico();
+
+            // Apariencia
+            const fs = localStorage.getItem(LS.fontSize) || '15';
+            aplicarTamanoFuente(fs);
+            aplicarDensidad(localStorage.getItem(LS.density) || 'comfortable');
+            aplicarContraste(localStorage.getItem(LS.contrast) === 'true');
+
+            // Voz
+            cargarAjustesVoz();
+            document.getElementById('langSelect').value = localStorage.getItem(LS.lang) || 'es-ES';
+            document.getElementById('wakeWordToggle').checked = localStorage.getItem(LS.wakeWord) === 'true';
+            document.getElementById('autoThemeToggle').checked = localStorage.getItem(LS.autoTheme) === 'true';
+
+            // Datos
+            cargarNotas();
+            cargarRecordatorios();
+            try { pinnedMsgs = JSON.parse(localStorage.getItem(LS.pinneados)) || []; } catch (e) { pinnedMsgs = []; }
+            try { historialComandos = JSON.parse(localStorage.getItem(LS.comandos)) || []; } catch (e) { historialComandos = []; }
+            renderizarPins();
+
+            // Emoji picker
+            inicializarEmojiPicker();
+
+            // Modo guardado
             const modoGuardado = localStorage.getItem(LS.modo);
             if (modoGuardado && AVATARES[modoGuardado]) {
                 modoActual = modoGuardado;
@@ -1216,6 +2465,7 @@
                 });
             }
 
+            // Historial
             let historialGuardado = [];
             try { historialGuardado = JSON.parse(localStorage.getItem(LS.historial)) || []; } catch (e) { historialGuardado = []; }
 
@@ -1224,7 +2474,7 @@
                 historialGuardado.forEach(m => {
                     const fechaObj = new Date(m.fecha);
                     insertarSeparadorFechaSiCorresponde(isNaN(fechaObj) ? new Date() : fechaObj);
-                    const wrapper = crearWrapperMensaje(m.contenido, m.tipo, m.hora, m.avatar);
+                    const wrapper = crearWrapperMensaje(m.contenido, m.tipo, m.hora, m.avatar, m.id);
                     container.appendChild(wrapper);
                 });
                 historial = historialGuardado;
@@ -1234,6 +2484,18 @@
             }
 
             actualizarContador();
+
+            // Timer de sesión
+            setInterval(actualizarTimerSesion, 1000);
+            actualizarTimerSesion();
+
+            // Bienvenida
+            setTimeout(mostrarBienvenidaSiNecesario, 400);
+
+            // Guardar historial de comandos periódicamente
+            setInterval(() => {
+                try { localStorage.setItem(LS.comandos, JSON.stringify(historialComandos.slice(-30))); } catch (e) {}
+            }, 5000);
         }
 
         iniciar();
